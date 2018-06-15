@@ -1,21 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    >
 
-    <android.support.v7.widget.CardView xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    <android.support.v7.widget.CardView
+
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/card_view"
 
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        card_view:cardCornerRadius="4dp"
-        card_view:cardElevation="5dp"
-        card_view:cardUseCompatPadding="true">
+        app:cardCornerRadius="@dimen/cardview_default_radius"
+        app:cardElevation="@dimen/cardview_default_elevation"
+        app:cardUseCompatPadding="true">
 
 
         <android.support.constraint.ConstraintLayout
@@ -24,70 +21,70 @@
 
             <View
                 android:id="@+id/divider"
-                android:layout_width="1dp"
-                android:layout_height="0dp"
-                android:layout_marginBottom="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
+                android:layout_width="@dimen/divider_width"
+                android:layout_height="@dimen/divider_height"
+                android:layout_marginBottom="@dimen/divider_margin_bottom"
+                android:layout_marginEnd="@dimen/divider_margin_end"
+                android:layout_marginStart="@dimen/divider_margin_start"
+                android:layout_marginTop="@dimen/divider_margin_top"
                 android:background="?android:attr/listDivider"
-                card_view:layout_constraintBottom_toBottomOf="parent"
-                card_view:layout_constraintEnd_toEndOf="parent"
-                card_view:layout_constraintHorizontal_bias="0.34"
-                card_view:layout_constraintStart_toStartOf="parent"
-                card_view:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.34"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/title"
-                android:layout_width="0dp"
+                android:layout_width="@dimen/title_layout_width"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
-                android:text="TextView"
+                android:layout_marginBottom="@dimen/title_margin_bottom"
+                android:layout_marginEnd="@dimen/title_margin_end"
+                android:layout_marginStart="@dimen/title_margin_start"
+                android:layout_marginTop="@dimen/title_margin_top"
+                android:text="@string/title"
                 android:textColor="@android:color/black"
-                android:textSize="12dp"
+                android:textSize="@dimen/title_text_size"
                 android:textStyle="bold"
-                card_view:layout_constraintBottom_toBottomOf="parent"
-                card_view:layout_constraintEnd_toEndOf="parent"
-                card_view:layout_constraintHorizontal_bias="0.088"
-                card_view:layout_constraintStart_toEndOf="@+id/divider"
-                card_view:layout_constraintTop_toTopOf="parent"
-                card_view:layout_constraintVertical_bias="0.0" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.088"
+                app:layout_constraintStart_toEndOf="@+id/divider"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0" />
 
             <TextView
                 android:id="@+id/description"
-                android:layout_width="0dp"
+                android:layout_width="@dimen/description_layout_width"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="2dp"
-                android:text="TextView"
-                android:textSize="10dp"
-                card_view:layout_constraintBottom_toBottomOf="parent"
-                card_view:layout_constraintEnd_toEndOf="parent"
-                card_view:layout_constraintHorizontal_bias="0.08"
-                card_view:layout_constraintStart_toEndOf="@+id/divider"
-                card_view:layout_constraintTop_toBottomOf="@+id/title"
-                card_view:layout_constraintVertical_bias="0.0" />
+                android:layout_marginBottom="@dimen/description_margin_bottom"
+                android:layout_marginEnd="@dimen/description_margin_end"
+                android:layout_marginStart="@dimen/description_margin_start"
+                android:layout_marginTop="@dimen/description_margin_top"
+                android:text="@string/description"
+                android:textSize="@dimen/description_text_size"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.08"
+                app:layout_constraintStart_toEndOf="@+id/divider"
+                app:layout_constraintTop_toBottomOf="@+id/title"
+                app:layout_constraintVertical_bias="0.0" />
 
             <ImageView
                 android:id="@+id/image"
-                android:layout_width="0dp"
-                android:layout_height="100dp"
-                android:layout_marginBottom="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
-                card_view:layout_constraintBottom_toBottomOf="parent"
-                card_view:layout_constraintEnd_toStartOf="@+id/divider"
-                card_view:layout_constraintStart_toStartOf="parent"
-                card_view:layout_constraintTop_toTopOf="parent" />
+                android:layout_width="@dimen/img_layout_width"
+                android:layout_height="@dimen/img_layout_height"
+                android:layout_marginBottom="@dimen/img_margin_bottom"
+                android:layout_marginEnd="@dimen/divider_margin_end"
+                android:layout_marginStart="@dimen/img_margin_start"
+                android:layout_marginTop="@dimen/img_margin_top"
+                android:contentDescription="@string/img_description"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/divider"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
         </android.support.constraint.ConstraintLayout>
     </android.support.v7.widget.CardView>
 
 
-</LinearLayout>

@@ -40,6 +40,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
         if(dataSet.get(position).getmImg()!=null)
             Picasso.get().load(dataSet.get(position).getmImg()).into(holder.mImage);
             //new DownloadImageTask(holder.mImage).execute(dataSet.get(position).getmImg());
+        else {
+            holder.mImage.setImageBitmap(null);
+        }
     }
 
     @Override
@@ -64,7 +67,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
 
         }
     }
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+   /* private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
 
         public DownloadImageTask(ImageView bmImage) {
@@ -88,5 +91,5 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
         protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
         }
-    }
+    }*/
 }

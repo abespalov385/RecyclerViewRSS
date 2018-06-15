@@ -9,7 +9,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.renderscript.ScriptGroup;
+
 import android.util.Log;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -18,10 +18,8 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 
-import java.io.InputStream;
-import java.net.HttpURLConnection;
+
 import java.net.URL;
-import java.sql.Connection;
 import java.util.ArrayList;
 
 import static android.content.ContentValues.TAG;
@@ -52,8 +50,9 @@ public class MyService extends Service {
                     break;
                 case MSG_UPDATE_LIST:
                     itemsList.clear();
-                    ParseRss task = new ParseRss();
-                    task.execute();
+                    //ParseRss task = new ParseRss();
+                    //task.execute();
+                    ParseRss();
                 case MSG_ADD_NEWS:
                     addNews(msg.arg1);
 
@@ -79,10 +78,9 @@ public class MyService extends Service {
     public void onCreate() {
         super.onCreate();
         itemsList = new ArrayList<Item>();
-        //ParseFile task = new ParseFile();
+        //ParseRss task = new ParseRss();
         //task.execute();
-        ParseRss task = new ParseRss();
-        task.execute();
+        ParseRss();
 
     }
 
@@ -106,7 +104,116 @@ public class MyService extends Service {
         super.onRebind(intent);
     }
 
-    private class ParseRss extends AsyncTask<Void, Void, Void>{
+    public void ParseRss(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+
+                    URL url = new URL("https://lenta.ru/rss");
+
+                    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                    factory.setNamespaceAware(false);
+                    XmlPullParser xpp = factory.newPullParser();
+                    xpp.setInput(url.openConnection().getInputStream(), "UTF-8");
+
+
+                    boolean insideItem = false;
+
+                    String title = null;
+                    String description = null;
+                    String img = null;
+
+
+                    // Returns the type of current event: START_TAG, END_TAG, etc..
+                    int eventType = xpp.getEventType();
+                    while (eventType != XmlPullParser.END_DOCUMENT) {
+                        if (eventType == XmlPullParser.START_TAG) {
+
+                            if (xpp.getName().equalsIgnoreCase("item")) {
+                                insideItem = true;
+                            } else if (xpp.getName().equalsIgnoreCase("title")) {
+                                if (insideItem)
+                                    title = xpp.nextText();
+                                //Log.i("Title: ",xpp.nextText());
+                            }
+                            else if (xpp.getName().equalsIgnoreCase("description")) {
+                                if (insideItem)
+                                    description = xpp.nextText();
+                                //Log.i("Description: ",xpp.nextText());
+                            }
+                            else if (xpp.getName().equalsIgnoreCase("enclosure")) {
+                                if (insideItem) {
+                                    img = xpp.getAttributeValue(null, "url");
+                                    //Log.i("ImgUrl ", xpp.getAttributeValue(null, "url"));
+                                }
+                            }
+
+
+                        } else if (eventType == XmlPullParser.END_TAG && xpp.getName().equalsIgnoreCase("item")) {
+                            insideItem = false;
+                            if (img!=null){
+                                itemsList.add(new Item(title,description,img));
+                                img = null;
+                            }
+                            else{
+                                itemsList.add(new Item(title,description));
+                            }
+                            title = null;
+                            description = null;
+
+                        }
+
+                        eventType = xpp.next(); /// move to next element
+                    }
+
+                }
+                catch (IOException e) {
+                    Log.e(TAG, "Error", e);
+                } catch (XmlPullParserException e) {
+                    Log.e(TAG, "Error", e);
+                }
+
+
+                try {
+                    Message newMsg = Message.obtain(null,
+                            MyService.MSG_SEND_LIST, START_NEWS, itemsList.size());
+                    Bundle b = new Bundle();
+                    for (int i=0; i<START_NEWS; i++){
+                        b.putSerializable("item"+i, itemsList.get(i));
+                    }
+                    newMsg.setData(b);
+                    if(mClient!=null)
+                        mClient.send(newMsg);
+
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
+
+    }
+
+    public void addNews(int newsCount){
+        try {
+            if(newsCount!=0){
+                Message newMsg = Message.obtain(null,
+                        MyService.MSG_ADD_NEWS);
+                Bundle b = new Bundle();
+                for (int i=newsCount; i<newsCount+10; i++){
+                    b.putSerializable("item"+i, itemsList.get(i));
+                }
+                newMsg.setData(b);
+                mClient.send(newMsg);
+            }
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*private class ParseRss extends AsyncTask<Void, Void, Void>{
         @Override
         protected Void doInBackground(Void... voids) {
             try{
@@ -195,25 +302,8 @@ public class MyService extends Service {
 
                 return null;
             }
-    }
-
-    public void addNews(int newsCount){
-        try {
-            if(newsCount!=0){
-                Message newMsg = Message.obtain(null,
-                        MyService.MSG_ADD_NEWS);
-                Bundle b = new Bundle();
-                for (int i=newsCount; i<newsCount+10; i++){
-                    b.putSerializable("item"+i, itemsList.get(i));
-                }
-                newMsg.setData(b);
-                mClient.send(newMsg);
-            }
-
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
+    }*/
 
 
 }
+
