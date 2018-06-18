@@ -1,12 +1,9 @@
 package com.example.alexander.recyclerview;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+
 import android.support.annotation.NonNull;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +12,6 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.io.InputStream;
 import java.util.List;
 
 public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
@@ -35,11 +31,11 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
 
     @Override
     public void onBindViewHolder(@NonNull MyAdapter.ViewHolder holder, int position) {
-        holder.mTitle.setText(dataSet.get(position).getmTitle());
-        holder.mDescription.setText(dataSet.get(position).getmDescription());
-        if(dataSet.get(position).getmImg()!=null)
-            Picasso.get().load(dataSet.get(position).getmImg()).into(holder.mImage);
-            //new DownloadImageTask(holder.mImage).execute(dataSet.get(position).getmImg());
+        holder.mTitle.setText(dataSet.get(position).getTitle());
+        holder.mDescription.setText(dataSet.get(position).getDescription());
+        if(dataSet.get(position).getImg() != null)
+            Picasso.get().load(dataSet.get(position).getImg()).into(holder.mImage);
+            //new DownloadImageTask(holder.mImage).execute(dataSet.get(position).getImg());
         else {
             holder.mImage.setImageBitmap(null);
         }

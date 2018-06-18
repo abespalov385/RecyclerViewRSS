@@ -21,27 +21,27 @@ public class Item implements Serializable{
         this.mImg = mImg;
     }
 
-    public String getmTitle() {
+    public String getTitle() {
         return mTitle;
     }
 
-    public void setmTitle(String mTitle) {
+    public void setTitle(String mTitle) {
         this.mTitle = mTitle;
     }
 
-    public String getmDescription() {
+    public String getDescription() {
         return mDescription;
     }
 
-    public String getmImg() {
+    public String getImg() {
         return mImg;
     }
 
-    public void setmImg(String mImg) {
+    public void setImg(String mImg) {
         this.mImg = mImg;
     }
 
-    public void setmDescription(String mDescription) {
+    public void setDescription(String mDescription) {
         this.mDescription = mDescription;
 
     }

@@ -86,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
         mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                itemsList.clear();
                 Message msg = Message.obtain(null, MyService.MSG_UPDATE_LIST);
                 try {
                     mService.send(msg);
@@ -152,17 +151,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void loadList(Message msg){
-
-        for (int i=0; i < msg.arg1; i++){
-            itemsList.add((Item) msg.getData().getSerializable("item"+i));
+        itemsList.clear();
+        for (int i = 0; i < msg.arg1; i++){
+            itemsList.add((Item) msg.getData().getSerializable("item" + i));
         }
         newsCount = itemsList.size();
         mAdapter.notifyDataSetChanged();
     }
 
     public void updateList(Message msg){
-        for (int i=newsCount; i<newsCount+10; i++){
-            itemsList.add((Item) msg.getData().getSerializable("item"+i));
+
+        for (int i = newsCount; i < newsCount+10; i++){
+            itemsList.add((Item) msg.getData().getSerializable("item" + i));
 
         }
         newsCount = itemsList.size();
