@@ -36,16 +36,16 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Item> itemsList;
     public static Boolean isActive = false;
     private BroadcastReceiver br;
-
+    private ProgressDialog mProgressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getSupportLoaderManager().initLoader(0, null, mLoaderCallbacks);
+        showProgressDialog();
 
         itemsList = new ArrayList<Item>();
-
         mSwipeRefresh = (SwipeRefreshLayout)findViewById(R.id.swipeRefresh);
         mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -143,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onLoadFinished(
                         Loader<ArrayList<Item>> loader, ArrayList<Item> data) {
                         if (mAdapter.getItemCount() != data.size()){
+                            hideProgressDialog();
                             mAdapter.setData(data);
                             mAdapter.notifyDataSetChanged();
 
@@ -154,6 +155,23 @@ public class MainActivity extends AppCompatActivity {
                 public void onLoaderReset(Loader<ArrayList<Item>> loader) {
                 }
             };
+
+    public void showProgressDialog() {
+        if (mProgressDialog == null) {
+            mProgressDialog = new ProgressDialog(this);
+            mProgressDialog.setMessage("Loading");
+            mProgressDialog.setIndeterminate(true);
+        }
+
+        mProgressDialog.show();
+    }
+
+    public void hideProgressDialog() {
+        if (mProgressDialog != null && mProgressDialog.isShowing()) {
+            mProgressDialog.dismiss();
+        }
+    }
+
 
 
 
