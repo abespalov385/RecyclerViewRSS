@@ -2,6 +2,7 @@ package com.example.alexander.recyclerview;
 
 
 import android.support.annotation.NonNull;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -12,13 +13,24 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.addAll;
+
 public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
-    List<Item> dataSet;
+    private List<Item> dataSet;
+    private OnItemClickListener listener;
 
     public MyAdapter(List<Item> itemsList) {
-        dataSet = itemsList;
+        this.dataSet = itemsList;
+    }
+
+    public interface OnItemClickListener {
+         void onClick(View view, int position, ImageView image);
+    }
+    public void setClickListener(OnItemClickListener itemClickListener) {
+        this.listener = itemClickListener;
     }
 
     @NonNull
@@ -29,16 +41,24 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
         return vh;
     }
 
+    public void setData(ArrayList<Item> data) {
+        this.dataSet.clear();
+        if (data != null) {
+            this.dataSet.addAll(data);
+        }
+    }
+
     @Override
     public void onBindViewHolder(@NonNull MyAdapter.ViewHolder holder, int position) {
         holder.mTitle.setText(dataSet.get(position).getTitle());
         holder.mDescription.setText(dataSet.get(position).getDescription());
         if(dataSet.get(position).getImg() != null)
             Picasso.get().load(dataSet.get(position).getImg()).into(holder.mImage);
-            //new DownloadImageTask(holder.mImage).execute(dataSet.get(position).getImg());
         else {
             holder.mImage.setImageBitmap(null);
         }
+        ViewCompat.setTransitionName(holder.mImage, dataSet.get(position).getImg());
+
     }
 
     @Override
@@ -46,7 +66,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
         return dataSet.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder{
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
 
         private TextView mTitle;
         private TextView mDescription;
@@ -59,33 +79,17 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
             mDescription = (TextView)itemView.findViewById(R.id.description);
             mTitle = (TextView)itemView.findViewById(R.id.title);
             mImage = (ImageView)itemView.findViewById(R.id.image);
+            mCv.setOnClickListener(this);
 
 
+
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (listener != null)
+                listener.onClick(v, getAdapterPosition(), mImage);
         }
     }
-   /* private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
 
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-                in.close();
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
-    }*/
 }

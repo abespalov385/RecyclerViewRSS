@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.alexander.recyclerview">
-    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -9,10 +10,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-
-        >
-        <activity android:name=".MainActivity"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".MainActivity"
             android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,9 +24,25 @@
         <service
             android:name=".MyService"
             android:enabled="true"
-            android:process=":service"
-            android:exported="true"></service>
+            android:exported="true"
+            android:process=":service" />
 
+        <activity android:name=".NewsDetail" />
+
+        <service
+            android:name=".NewsService"
+            android:enabled="true"
+            android:exported="true"
+            android:process=":newsservice" />
+
+        <receiver
+            android:name=".MyReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.example.alexander.recyclerview.NOTIFICATION"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

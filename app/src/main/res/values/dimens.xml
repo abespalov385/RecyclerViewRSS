@@ -28,4 +28,23 @@
     <dimen name="img_margin_start">8dp</dimen>
     <dimen name="img_margin_top">8dp</dimen>
 
+    <dimen name="linear_layout_margin_top">0dp</dimen>
+
+    <dimen name="img_detail_layout_height">200dp</dimen>
+    <dimen name="img_detail_margin_bottom">8dp</dimen>
+    <dimen name="img_detail_margin_end">8dp</dimen>
+    <dimen name="img_detail_margin_start">8dp</dimen>
+    <dimen name="img_detail_margin_top">16dp</dimen>
+
+    <dimen name="title_detail_layout_width">0dp</dimen>
+    <dimen name="title_detail_margin_bottom">0dp</dimen>
+    <dimen name="title_detail_margin_end">8dp</dimen>
+    <dimen name="title_detail_margin_start">8dp</dimen>
+    <dimen name="title_detail_margin_top">8dp</dimen>
+    <dimen name="title_detail_text_size">18sp</dimen>
+
+    <dimen name="description_detail_margin_end">8dp</dimen>
+    <dimen name="description_detail_margin_start">8dp</dimen>
+    <dimen name="description_detail_text_size">12sp</dimen>
+
 </resources>

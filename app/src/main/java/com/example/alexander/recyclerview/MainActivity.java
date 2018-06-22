@@ -1,21 +1,27 @@
 package com.example.alexander.recyclerview;
 
-import android.content.ComponentName;
+
+import android.app.ActivityOptions;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
+import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
+import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.Pair;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -28,57 +34,15 @@ public class MainActivity extends AppCompatActivity {
     private MyAdapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     private ArrayList<Item> itemsList;
-
-    private int newsCount;
-
-    Messenger mService = null;
-
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
-
-    boolean mBound;
-
-    class IncomingHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MyService.MSG_SEND_LIST:
-                    loadList(msg);
-                    Log.d("LOG", Integer.toString(msg.arg2));
-                    break;
-                case MyService.MSG_ADD_NEWS:
-                    updateList(msg);
-                default:
-                    super.handleMessage(msg);
-            }
-        }
-    }
-
-    private ServiceConnection mConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder service) {
-
-            mService = new Messenger(service);
-            mBound = true;
-            Message msg = Message.obtain(null,
-                    MyService.MSG_CONNECTED);
-            msg.replyTo = mMessenger;
-            try {
-                mService.send(msg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            mService = null;
-            mBound = false;
-        }
-    };
+    public static Boolean isActive = false;
+    private BroadcastReceiver br;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getSupportLoaderManager().initLoader(0, null, mLoaderCallbacks);
 
         itemsList = new ArrayList<Item>();
 
@@ -86,58 +50,72 @@ public class MainActivity extends AppCompatActivity {
         mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                Message msg = Message.obtain(null, MyService.MSG_UPDATE_LIST);
-                try {
-                    mService.send(msg);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
+                getSupportLoaderManager().getLoader(0).forceLoad();
                 mSwipeRefresh.setRefreshing(false);
 
             }
         });
-
-
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
-
         mRecyclerView.setHasFixedSize(true);
-
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
 
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                if (!recyclerView.canScrollVertically(1) && newsCount<200) {
-                    Message msg = Message.obtain(null, MyService.MSG_ADD_NEWS, newsCount, 0);
-                    try {
-                        mService.send(msg);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
+                if (!recyclerView.canScrollVertically(1)) {
+
                 }
             }
         });
-
         mAdapter = new MyAdapter(itemsList);
+        mAdapter.setClickListener(new MyAdapter.OnItemClickListener() {
+            @Override
+            public void onClick(View view, int position, ImageView img) {
+                //Log.d("LOG", "Title " + itemsList.get(position).getTitle() + ", Description " +itemsList.get(position).getDescription());
+                Intent intent = new Intent(MainActivity.this, NewsDetail.class);
+                intent.putExtra("Title", itemsList.get(position).getTitle());
+                intent.putExtra("Description", itemsList.get(position).getDescription());
+                intent.putExtra("Img", itemsList.get(position).getImg());
+                Log.d("LOG", img.getTransitionName());
+                Pair imgPair = Pair.create(img, ViewCompat.getTransitionName(img));
+                ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(MainActivity.this, imgPair);
+                startActivity(intent, options.toBundle());
+
+            }
+        });
         mRecyclerView.setAdapter(mAdapter);
 
-        // Bind to the service
-        bindService(new Intent(this, MyService.class), mConnection,
-                Context.BIND_AUTO_CREATE);
-        mBound = true;
+        startService(new Intent(this, NewsService.class));
+        br = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                getSupportLoaderManager().getLoader(0).forceLoad();
+            }
+        };
+        registerReceiver(br, new IntentFilter("com.example.alexander.recyclerview.NOTIFICATION"));
 
     }
 
     @Override
     protected void onDestroy() {
+        unregisterReceiver(br);
         super.onDestroy();
-        // Unbind from the service
-        if (mBound) {
-            unbindService(mConnection);
-            mBound = false;
-        }
+
     }
+
+    @Override
+    protected void onStart(){
+        super.onStart();
+        isActive = true;
+    }
+
+    @Override
+    protected void onStop(){
+        super.onStop();
+        isActive = false;
+    }
+
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
@@ -150,25 +128,33 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void loadList(Message msg){
-        itemsList.clear();
-        for (int i = 0; i < msg.arg1; i++){
-            itemsList.add((Item) msg.getData().getSerializable("item" + i));
-        }
-        newsCount = itemsList.size();
-        mAdapter.notifyDataSetChanged();
-    }
 
-    public void updateList(Message msg){
+    private LoaderManager.LoaderCallbacks<ArrayList<Item>>
+            mLoaderCallbacks =
+            new LoaderManager.LoaderCallbacks<ArrayList<Item>>() {
 
-        for (int i = newsCount; i < newsCount+10; i++){
-            itemsList.add((Item) msg.getData().getSerializable("item" + i));
+                @Override
+                public Loader<ArrayList<Item>> onCreateLoader(
+                        int id, Bundle args) {
+                    return new NewsLoader(MainActivity.this);
+                }
 
-        }
-        newsCount = itemsList.size();
-        mAdapter.notifyDataSetChanged();
+                @Override
+                public void onLoadFinished(
+                        Loader<ArrayList<Item>> loader, ArrayList<Item> data) {
+                        if (mAdapter.getItemCount() != data.size()){
+                            mAdapter.setData(data);
+                            mAdapter.notifyDataSetChanged();
 
-    }
+                        }
+                }
+
+
+                @Override
+                public void onLoaderReset(Loader<ArrayList<Item>> loader) {
+                }
+            };
+
 
 
 }
