@@ -1,7 +1,6 @@
 package com.example.alexander.recyclerview;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -9,18 +8,13 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.util.Log;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 
 public class MyService extends Service {
 
-    int mStartMode;
-    IBinder mBinder;
-    boolean mAllowRebind;
+    private int mStartMode;
+    private IBinder mBinder;
+    private boolean mAllowRebind;
 
     static final int MSG_CONNECTED = 1;
     static final int MSG_UPDATE_LIST = 2;
@@ -28,9 +22,7 @@ public class MyService extends Service {
     static final int MSG_ADD_NEWS = 4;
     static final int START_NEWS = 20;
     private Messenger mClient;
-    ArrayList<Item> itemsList;
-
-
+    private ArrayList<Item> mItemsList;
 
     class IncomingHandler extends Handler {
         @Override
@@ -40,12 +32,13 @@ public class MyService extends Service {
                     mClient = msg.replyTo;
                     break;
                 case MSG_UPDATE_LIST:
-                    itemsList.clear();
+                    mItemsList.clear();
                     parseRss();
+                    break;
                 case MSG_ADD_NEWS:
                     addNews(msg.arg1);
-
-                    default:
+                    break;
+                default:
                     super.handleMessage(msg);
             }
         }
@@ -58,18 +51,14 @@ public class MyService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-
-
         return mMessenger.getBinder();
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        itemsList = new ArrayList<Item>();
+        mItemsList = new ArrayList<Item>();
         parseRss();
-
-
     }
 
     @Override
@@ -96,18 +85,18 @@ public class MyService extends Service {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Parser.parseRssToList(itemsList);
+                Parser.parseRssToList(mItemsList);
                 try {
                     Message newMsg = Message.obtain(null,
-                            MyService.MSG_SEND_LIST, START_NEWS, itemsList.size());
+                            MyService.MSG_SEND_LIST, START_NEWS, mItemsList.size());
                     Bundle b = new Bundle();
                     for (int i = 0; i < START_NEWS; i++){
-                        b.putSerializable("item" + i, itemsList.get(i));
+                        b.putSerializable("item" + i, mItemsList.get(i));
                     }
                     newMsg.setData(b);
-                    if(mClient != null)
+                    if(mClient != null){
                         mClient.send(newMsg);
-
+                    }
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -117,26 +106,20 @@ public class MyService extends Service {
     }
 
     public void addNews(int newsCount){
-
         try {
             if(newsCount != 0){
                 Message newMsg = Message.obtain(null,
                         MyService.MSG_ADD_NEWS);
                 Bundle b = new Bundle();
                 for (int i = newsCount; i < newsCount+10; i++){
-                    b.putSerializable("item" + i, itemsList.get(i));
+                    b.putSerializable("item" + i, mItemsList.get(i));
                 }
                 newMsg.setData(b);
                 mClient.send(newMsg);
             }
-
         } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
-
-
-
-
 }
 

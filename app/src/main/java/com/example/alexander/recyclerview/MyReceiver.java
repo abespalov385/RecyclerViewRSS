@@ -8,15 +8,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 
-
 public class MyReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        //Toast.makeText(context, "Updated", Toast.LENGTH_LONG).show();
+        //  Toast.makeText(context, "Updated", Toast.LENGTH_LONG).show();
         Intent resultIntent = new Intent(context, MainActivity.class);
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(context, 0 , resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
+        PendingIntent resultPendingIntent = PendingIntent.getActivity(context, 0,
+                resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(context)
                         .setSmallIcon(R.drawable.ic_stat_name)
@@ -24,14 +23,11 @@ public class MyReceiver extends BroadcastReceiver {
                         .setContentTitle("News updated")
                         .setContentText("Your news list has been updated")
                         .setAutoCancel(true);
-
         Notification notification = builder.build();
-
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (!MainActivity.isActive)
-        notificationManager.notify(1, notification);
-
-
+        if (!MainActivity.sIsActive){
+            notificationManager.notify(1, notification);
+        }
     }
 }

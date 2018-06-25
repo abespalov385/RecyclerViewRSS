@@ -1,6 +1,5 @@
 package com.example.alexander.recyclerview;
 
-
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -8,53 +7,45 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
-
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class NewsService extends Service {
 
-    private ArrayList<Item> itemsList;
+    private ArrayList<Item> mItemsList;
 
     public NewsService() {
-
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        itemsList = new ArrayList<Item>();
-
+        mItemsList = new ArrayList<Item>();
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if(!getFileStreamPath("news.json").exists()){
-                    Parser.parseRssToList(itemsList);
-                    writeToFile(itemsList);
+                if(!getFileStreamPath("news.json").exists()) {
+                    Parser.parseRssToList(mItemsList);
+                    writeToFile(mItemsList);
+                    checkUpdates();
+                } else {
                     checkUpdates();
                 }
-                else
-                    checkUpdates();
             }
         }).start();
-
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("LOG", "OnStartCommand");
-
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -68,13 +59,12 @@ public class NewsService extends Service {
         return null;
     }
 
-    public void writeToFile(ArrayList<Item> data){
-
+    public void writeToFile(ArrayList<Item> data) {
         try {
             OutputStream outputStream = openFileOutput("news.json", Context.MODE_PRIVATE);
             Parser.writeJsonStream(outputStream, data);
             outputStream.close();
-            //Log.d("LOG", this.getFilesDir().getPath());
+            // Log.d("LOG", this.getFilesDir().getPath());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -82,35 +72,35 @@ public class NewsService extends Service {
         }
     }
 
-    public void checkUpdates(){
+    public void checkUpdates() {
         Looper.prepare();
         final Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 Handler handler = new Handler();
-                if (itemsList.isEmpty())
+                if (mItemsList.isEmpty()) {
                     readFromFile();
-                Item lastItem = itemsList.get(0);
-                Integer size = itemsList.size();
-                //Log.d("LOG", lastItem.getTitle());
+                }
+                Item lastItem = mItemsList.get(0);
+                Integer size = mItemsList.size();
+                // Log.d("LOG", lastItem.getTitle());
                 ArrayList<Item> tempList = new ArrayList<Item>();
                 Parser.parseRssToList(tempList);
-                //Log.d("LOG", tempList.get(0).getTitle());
-                //Log.d("LOG", Boolean.toString(tempList.get(0).getTitle().equals(lastItem.getTitle())));
-                for (int i = 0; i<tempList.size(); i++)
-                    if (!tempList.get(i).getTitle().equals(lastItem.getTitle())){
-                        itemsList.add(0, tempList.get(i));
-                        //Log.d("LOG", Integer.toString(itemsList.size()));
-                    }
-                    else break;
-                if (size!=itemsList.size()) {
-                    Collections.sort(itemsList, new Comparator<Item>() {
+                // Log.d("LOG", tempList.get(0).getTitle());
+                for (int i = 0; i < tempList.size(); i++) {
+                    if (!tempList.get(i).getTitle().equals(lastItem.getTitle())) {
+                        mItemsList.add(0, tempList.get(i));
+                        // Log.d("LOG", Integer.toString(itemsList.size()));
+                    } else break;
+                }
+                if (size != mItemsList.size()) {
+                    Collections.sort(mItemsList, new Comparator<Item>() {
                         @Override
                         public int compare(Item lhs, Item rhs) {
                             return rhs.getPubDate().compareTo(lhs.getPubDate());
                         }
                     });
-                    writeToFile(itemsList);
+                    writeToFile(mItemsList);
                     sendBroadcast();
                     Log.d("LOG", "UPDATED");
                 }
@@ -122,8 +112,7 @@ public class NewsService extends Service {
         runnable.run();
     }
 
-
-    public void readFromFile(){
+    public void readFromFile() {
         String json = null;
         try {
             InputStream inputStream = openFileInput("news.json");
@@ -132,16 +121,15 @@ public class NewsService extends Service {
             inputStream.read(buffer);
             inputStream.close();
             json = new String(buffer, "UTF-8");
-
         } catch (IOException e) {
             e.printStackTrace();
         }
         try {
             JSONObject obj = new JSONObject(json);
             JSONArray news = obj.getJSONArray("news");
-            for(int i=0; i<news.length(); i++){
+            for (int i = 0; i < news.length(); i++) {
                 JSONObject card = news.getJSONObject(i);
-                itemsList.add(new Item(card.getString("title"),
+                mItemsList.add(new Item(card.getString("title"),
                         card.getString("description"),
                         card.getString("link"),
                         card.getString("pubDate"),
@@ -152,7 +140,7 @@ public class NewsService extends Service {
         }
     }
 
-    public void sendBroadcast(){
+    public void sendBroadcast() {
         Intent intent = new Intent();
         intent.setAction("com.example.alexander.recyclerview.NOTIFICATION");
         sendBroadcast(intent);

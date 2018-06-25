@@ -1,6 +1,5 @@
 package com.example.alexander.recyclerview;
 
-
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
@@ -10,27 +9,24 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.squareup.picasso.Picasso;
-
 import java.util.ArrayList;
 import java.util.List;
+import com.squareup.picasso.Picasso;
 
-import static java.util.Collections.addAll;
+public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
 
-public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
-    private List<Item> dataSet;
-    private OnItemClickListener listener;
+    private List<Item> mDataSet;
+    private OnItemClickListener mListener;
 
     public MyAdapter(List<Item> itemsList) {
-        this.dataSet = itemsList;
+        this.mDataSet = itemsList;
     }
 
     public interface OnItemClickListener {
          void onClick(View view, int position, ImageView image);
     }
     public void setClickListener(OnItemClickListener itemClickListener) {
-        this.listener = itemClickListener;
+        this.mListener = itemClickListener;
     }
 
     @NonNull
@@ -42,32 +38,31 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
     }
 
     public void setData(ArrayList<Item> data) {
-        this.dataSet.clear();
+        this.mDataSet.clear();
         if (data != null) {
-            this.dataSet.addAll(data);
+            this.mDataSet.addAll(data);
         }
     }
 
     @Override
     public void onBindViewHolder(@NonNull MyAdapter.ViewHolder holder, int position) {
-        holder.mTitle.setText(dataSet.get(position).getTitle());
-        holder.mDescription.setText(dataSet.get(position).getDescription());
-        if(dataSet.get(position).getImg() != null)
-            Picasso.get().load(dataSet.get(position).getImg()).into(holder.mImage);
-        else {
+        holder.mTitle.setText(mDataSet.get(position).getTitle());
+        holder.mDescription.setText(mDataSet.get(position).getDescription());
+        if(mDataSet.get(position).getImg() != null) {
+            Picasso.get().load(mDataSet.get(position).getImg()).into(holder.mImage);
+        } else {
             holder.mImage.setImageBitmap(null);
         }
-        ViewCompat.setTransitionName(holder.mImage, dataSet.get(position).getImg());
+        ViewCompat.setTransitionName(holder.mImage, mDataSet.get(position).getImg());
 
     }
 
     @Override
     public int getItemCount() {
-        return dataSet.size();
+        return mDataSet.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
-
         private TextView mTitle;
         private TextView mDescription;
         private CardView mCv;
@@ -80,16 +75,12 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder>{
             mTitle = (TextView)itemView.findViewById(R.id.title);
             mImage = (ImageView)itemView.findViewById(R.id.image);
             mCv.setOnClickListener(this);
-
-
-
         }
 
         @Override
         public void onClick(View v) {
-            if (listener != null)
-                listener.onClick(v, getAdapterPosition(), mImage);
+            if (mListener != null)
+                mListener.onClick(v, getAdapterPosition(), mImage);
         }
     }
-
 }

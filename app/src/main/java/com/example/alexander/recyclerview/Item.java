@@ -7,15 +7,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-
 public class Item implements Serializable{
+
     private String mTitle;
     private String mDescription;
     private String mImg;
     private String mLink;
     private Date mPubDate;
-    private static final long serialVersionUID = 1L;
-
 
     public Item(String mTitle, String mDescription, String mLink, String date) {
         this.mTitle = mTitle;
@@ -29,14 +27,6 @@ public class Item implements Serializable{
         }
     }
 
-    public Date getPubDate() {
-        return mPubDate;
-    }
-
-    public void setPubDate(Date pubDate) {
-        this.mPubDate = pubDate;
-    }
-
     public Item(String mTitle, String mDescription, String mLink, String date , String mImg) {
         this.mTitle = mTitle;
         this.mDescription = mDescription;
@@ -44,11 +34,18 @@ public class Item implements Serializable{
         DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
         try {
             this.mPubDate = formatter.parse(date);
-
         } catch (ParseException e) {
             e.printStackTrace();
         }
         this.mImg = mImg;
+    }
+
+    public Date getPubDate() {
+        return mPubDate;
+    }
+
+    public void setPubDate(Date pubDate) {
+        this.mPubDate = pubDate;
     }
 
     public String getTitle() {
@@ -83,6 +80,4 @@ public class Item implements Serializable{
     public void setLink(String mURL) {
         this.mLink = mURL;
     }
-
-
 }
