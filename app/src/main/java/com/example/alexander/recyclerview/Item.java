@@ -31,7 +31,7 @@ public class Item implements Serializable{
         this.mTitle = mTitle;
         this.mDescription = mDescription;
         this.mLink = mLink;
-        DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
+        DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
         try {
             this.mPubDate = formatter.parse(date);
         } catch (ParseException e) {

@@ -3,10 +3,13 @@ package com.example.alexander.recyclerview;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +49,7 @@ public class NewsService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("LOG", "OnStartCommand");
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -61,10 +65,12 @@ public class NewsService extends Service {
 
     public void writeToFile(ArrayList<Item> data) {
         try {
-            OutputStream outputStream = openFileOutput("news.json", Context.MODE_PRIVATE);
-            Parser.writeJsonStream(outputStream, data);
-            outputStream.close();
-            // Log.d("LOG", this.getFilesDir().getPath());
+            if (checkConnection()) {
+                OutputStream outputStream = openFileOutput("news.json", Context.MODE_PRIVATE);
+                Parser.writeJsonStream(outputStream, data);
+                outputStream.close();
+            }
+                // Log.d("LOG", this.getFilesDir().getPath());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -78,34 +84,41 @@ public class NewsService extends Service {
             @Override
             public void run() {
                 Handler handler = new Handler();
-                if (mItemsList.isEmpty()) {
-                    readFromFile();
+                if (checkConnection()) {
+                    if (!getFileStreamPath("news.json").exists()) {
+                        writeToFile(mItemsList);
+                    }
+                    if (mItemsList.isEmpty()) {
+                        readFromFile();
+                    }
+                    Item lastItem = mItemsList.get(0);
+                    Integer size = mItemsList.size();
+                    // Log.d("LOG", lastItem.getTitle());
+                    ArrayList<Item> tempList = new ArrayList<Item>();
+                    Parser.parseRssToList(tempList);
+                    // Log.d("LOG", tempList.get(0).getTitle());
+                    for (int i = 0; i < tempList.size(); i++) {
+                        if (!tempList.get(i).getTitle().equals(lastItem.getTitle())) {
+                            mItemsList.add(0, tempList.get(i));
+                            // Log.d("LOG", Integer.toString(itemsList.size()));
+                        } else break;
+                    }
+                    if (size != mItemsList.size()) {
+                        Collections.sort(mItemsList, new Comparator<Item>() {
+                            @Override
+                            public int compare(Item lhs, Item rhs) {
+                                return rhs.getPubDate().compareTo(lhs.getPubDate());
+                            }
+                        });
+                        writeToFile(mItemsList);
+                        sendBroadcast();
+                        Log.d("LOG", "UPDATED");
+                    }
+                    Log.d("LOG", "CHECKED");
                 }
-                Item lastItem = mItemsList.get(0);
-                Integer size = mItemsList.size();
-                // Log.d("LOG", lastItem.getTitle());
-                ArrayList<Item> tempList = new ArrayList<Item>();
-                Parser.parseRssToList(tempList);
-                // Log.d("LOG", tempList.get(0).getTitle());
-                for (int i = 0; i < tempList.size(); i++) {
-                    if (!tempList.get(i).getTitle().equals(lastItem.getTitle())) {
-                        mItemsList.add(0, tempList.get(i));
-                        // Log.d("LOG", Integer.toString(itemsList.size()));
-                    } else break;
-                }
-                if (size != mItemsList.size()) {
-                    Collections.sort(mItemsList, new Comparator<Item>() {
-                        @Override
-                        public int compare(Item lhs, Item rhs) {
-                            return rhs.getPubDate().compareTo(lhs.getPubDate());
-                        }
-                    });
-                    writeToFile(mItemsList);
-                    sendBroadcast();
-                    Log.d("LOG", "UPDATED");
-                }
-                Log.d("LOG", "CHECKED");
-                handler.postDelayed(this, 1000 * 60 * 2);
+                handler.postDelayed(this, 1000 * 20 * 1);
+                Log.d("LOG", Boolean.toString(checkConnection()));
+                Log.d("LOG", Integer.toString(mItemsList.size()));
                 Looper.loop();
             }
         };
@@ -144,5 +157,15 @@ public class NewsService extends Service {
         Intent intent = new Intent();
         intent.setAction("com.example.alexander.recyclerview.NOTIFICATION");
         sendBroadcast(intent);
+    }
+
+    public Boolean checkConnection() {
+        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

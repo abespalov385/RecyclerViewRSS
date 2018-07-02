@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
@@ -31,14 +33,15 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Item> mItemsList;
     public static Boolean sIsActive = false;
     private BroadcastReceiver mBr;
-    private ProgressDialog mProgressDialog;
+    private ProgressDialog mProgressDialogLoading;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getSupportLoaderManager().initLoader(0, null, mLoaderCallbacks);
-        showProgressDialog();
+
+        startService(new Intent(this, NewsService.class));
         mItemsList = new ArrayList<Item>();
         mLayoutManager = new LinearLayoutManager(this);
         mSwipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
@@ -52,14 +55,7 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                if (!recyclerView.canScrollVertically(1)) {
-                }
-            }
-        });
-        mAdapter = new MyAdapter(mItemsList);
+        mAdapter = new MyAdapter();
         mAdapter.setClickListener(new MyAdapter.OnItemClickListener() {
             @Override
             public void onClick(View view, int position, ImageView img) {
@@ -77,7 +73,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         mRecyclerView.setAdapter(mAdapter);
-        startService(new Intent(this, NewsService.class));
         mBr = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -103,7 +98,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         sIsActive = false;
-        hideProgressDialog();
     }
 
     @Override
@@ -116,18 +110,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void showProgressDialog() {
-        if (mProgressDialog == null) {
-            mProgressDialog = new ProgressDialog(this);
-            mProgressDialog.setMessage("Loading");
-            mProgressDialog.setIndeterminate(true);
+    public void showProgressDialog(String dialog) {
+        if (mProgressDialogLoading == null) {
+            mProgressDialogLoading = new ProgressDialog(this);
+            mProgressDialogLoading.setMessage(dialog);
+            mProgressDialogLoading.setIndeterminate(true);
+            mProgressDialogLoading.setCancelable(false);
         }
-        mProgressDialog.show();
+        mProgressDialogLoading.show();
     }
 
     public void hideProgressDialog() {
-        if (mProgressDialog != null && mProgressDialog.isShowing()) {
-            mProgressDialog.dismiss();
+        if (mProgressDialogLoading != null && mProgressDialogLoading.isShowing()) {
+            mProgressDialogLoading.dismiss();
         }
     }
 
@@ -136,12 +131,13 @@ public class MainActivity extends AppCompatActivity {
             new LoaderManager.LoaderCallbacks<ArrayList<Item>>() {
                 @Override
                 public Loader<ArrayList<Item>> onCreateLoader(int id, Bundle args) {
+                    showProgressDialog("Loading");
                     return new NewsLoader(MainActivity.this);
                 }
 
                 @Override
                 public void onLoadFinished(Loader<ArrayList<Item>> loader, ArrayList<Item> data) {
-                    if (mAdapter.getItemCount() != data.size()){
+                    if (mAdapter.getItemCount() != data.size()) {
                         hideProgressDialog();
                         mAdapter.setData(data);
                         mAdapter.notifyDataSetChanged();
@@ -152,4 +148,14 @@ public class MainActivity extends AppCompatActivity {
                 public void onLoaderReset(Loader<ArrayList<Item>> loader) {
                 }
             };
+
+    public Boolean checkConnection() {
+        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

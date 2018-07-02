@@ -18,9 +18,6 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     private List<Item> mDataSet;
     private OnItemClickListener mListener;
 
-    public MyAdapter(List<Item> itemsList) {
-        this.mDataSet = itemsList;
-    }
 
     public interface OnItemClickListener {
          void onClick(View view, int position, ImageView image);
@@ -54,8 +51,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
             holder.mImage.setImageBitmap(null);
         }
         ViewCompat.setTransitionName(holder.mImage, mDataSet.get(position).getImg());
-
     }
+
+
 
     @Override
     public int getItemCount() {

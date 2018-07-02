@@ -19,7 +19,6 @@ import static android.content.ContentValues.TAG;
 
 public class Parser {
     public static ArrayList<Item> parseRssToList(ArrayList<Item> itemsList) {
-        JSONArray jsonArray = new JSONArray();
         try {
             URL url = new URL("https://lenta.ru/rss");
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -104,7 +103,7 @@ public class Parser {
     }
 
     public static void writeNews(JsonWriter writer, Item item) throws IOException {
-        DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
+        DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
         writer.beginObject();
         writer.name("title").value(item.getTitle());
         writer.name("description").value(item.getDescription());

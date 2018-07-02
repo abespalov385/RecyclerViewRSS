@@ -21,18 +21,18 @@ public class MyService extends Service {
     static final int MSG_SEND_LIST = 3;
     static final int MSG_ADD_NEWS = 4;
     static final int START_NEWS = 20;
-    private Messenger mClient;
-    private ArrayList<Item> mItemsList;
+    static Messenger sClient;
+    static ArrayList<Item> sItemsList;
 
-    class IncomingHandler extends Handler {
+    static class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MSG_CONNECTED:
-                    mClient = msg.replyTo;
+                    sClient = msg.replyTo;
                     break;
                 case MSG_UPDATE_LIST:
-                    mItemsList.clear();
+                    sItemsList.clear();
                     parseRss();
                     break;
                 case MSG_ADD_NEWS:
@@ -57,7 +57,7 @@ public class MyService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        mItemsList = new ArrayList<Item>();
+        sItemsList = new ArrayList<Item>();
         parseRss();
     }
 
@@ -81,21 +81,21 @@ public class MyService extends Service {
         super.onRebind(intent);
     }
 
-    public void parseRss(){
+    public static void parseRss(){
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Parser.parseRssToList(mItemsList);
+                Parser.parseRssToList(sItemsList);
                 try {
                     Message newMsg = Message.obtain(null,
-                            MyService.MSG_SEND_LIST, START_NEWS, mItemsList.size());
+                            MyService.MSG_SEND_LIST, START_NEWS, sItemsList.size());
                     Bundle b = new Bundle();
                     for (int i = 0; i < START_NEWS; i++){
-                        b.putSerializable("item" + i, mItemsList.get(i));
+                        b.putSerializable("item" + i, sItemsList.get(i));
                     }
                     newMsg.setData(b);
-                    if(mClient != null){
-                        mClient.send(newMsg);
+                    if(sClient != null){
+                        sClient.send(newMsg);
                     }
                 } catch (RemoteException e) {
                     e.printStackTrace();
@@ -105,17 +105,17 @@ public class MyService extends Service {
 
     }
 
-    public void addNews(int newsCount){
+    public static void addNews(int newsCount){
         try {
             if(newsCount != 0){
                 Message newMsg = Message.obtain(null,
                         MyService.MSG_ADD_NEWS);
                 Bundle b = new Bundle();
                 for (int i = newsCount; i < newsCount+10; i++){
-                    b.putSerializable("item" + i, mItemsList.get(i));
+                    b.putSerializable("item" + i, sItemsList.get(i));
                 }
                 newMsg.setData(b);
-                mClient.send(newMsg);
+                sClient.send(newMsg);
             }
         } catch (RemoteException e) {
             e.printStackTrace();

@@ -30,14 +30,12 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
 
     @Override
     public ArrayList<Item> loadInBackground() {
-        if(!getContext().getFileStreamPath("news.json").exists())
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-             e.printStackTrace();
-            }
         Log.d("LOG", "Load Start");
         ArrayList<Item> data = new ArrayList<Item>();
+        getContext().getFileStreamPath("news.json");
+        if (!getContext().getFileStreamPath("news.json").exists()) {
+            return data;
+        }
         String json = null;
         try {
             InputStream inputStream = getContext().openFileInput("news.json");
@@ -47,6 +45,7 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
             inputStream.close();
             json = new String(buffer, "UTF-8");
         } catch (IOException e) {
+            Log.d("LOG", "Not found");
             e.printStackTrace();
         }
         try {
