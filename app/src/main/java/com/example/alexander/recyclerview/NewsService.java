@@ -1,16 +1,16 @@
 package com.example.alexander.recyclerview;
 
-import android.app.Service;
+import android.app.job.JobInfo;
+import android.app.job.JobParameters;
+import android.app.job.JobScheduler;
+import android.app.job.JobService;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,11 +21,26 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class NewsService extends Service {
+public class NewsService extends JobService {
 
     private ArrayList<Item> mItemsList;
 
     public NewsService() {
+    }
+
+    @Override
+    public boolean onStartJob(JobParameters params) {
+        if (checkConnection()) {
+            checkUpdates();
+        }
+        jobFinished(params, true);
+        scheduleJob();
+        return true;
+    }
+
+    @Override
+    public boolean onStopJob(JobParameters params) {
+        return false;
     }
 
     @Override
@@ -38,18 +53,16 @@ public class NewsService extends Service {
                 if(!getFileStreamPath("news.json").exists()) {
                     Parser.parseRssToList(mItemsList);
                     writeToFile(mItemsList);
-                    checkUpdates();
-                } else {
-                    checkUpdates();
                 }
             }
         }).start();
+        Log.d("LOG", "OnCreate");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("LOG", "OnStartCommand");
-
+        scheduleJob();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -58,71 +71,53 @@ public class NewsService extends Service {
         super.onDestroy();
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
     public void writeToFile(ArrayList<Item> data) {
         try {
             if (checkConnection()) {
                 OutputStream outputStream = openFileOutput("news.json", Context.MODE_PRIVATE);
                 Parser.writeJsonStream(outputStream, data);
                 outputStream.close();
+                sendBroadcastReady();
             }
                 // Log.d("LOG", this.getFilesDir().getPath());
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void checkUpdates() {
-        Looper.prepare();
-        final Runnable runnable = new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
-                Handler handler = new Handler();
-                if (checkConnection()) {
-                    if (!getFileStreamPath("news.json").exists()) {
-                        writeToFile(mItemsList);
-                    }
-                    if (mItemsList.isEmpty()) {
-                        readFromFile();
-                    }
-                    Item lastItem = mItemsList.get(0);
-                    Integer size = mItemsList.size();
-                    // Log.d("LOG", lastItem.getTitle());
-                    ArrayList<Item> tempList = new ArrayList<Item>();
-                    Parser.parseRssToList(tempList);
-                    // Log.d("LOG", tempList.get(0).getTitle());
-                    for (int i = 0; i < tempList.size(); i++) {
-                        if (!tempList.get(i).getTitle().equals(lastItem.getTitle())) {
-                            mItemsList.add(0, tempList.get(i));
-                            // Log.d("LOG", Integer.toString(itemsList.size()));
-                        } else break;
-                    }
-                    if (size != mItemsList.size()) {
-                        Collections.sort(mItemsList, new Comparator<Item>() {
-                            @Override
-                            public int compare(Item lhs, Item rhs) {
-                                return rhs.getPubDate().compareTo(lhs.getPubDate());
-                            }
-                        });
-                        writeToFile(mItemsList);
-                        sendBroadcast();
-                        Log.d("LOG", "UPDATED");
-                    }
-                    Log.d("LOG", "CHECKED");
+                if (mItemsList.isEmpty()) {
+                    readFromFile();
                 }
-                handler.postDelayed(this, 1000 * 20 * 1);
-                Log.d("LOG", Boolean.toString(checkConnection()));
-                Log.d("LOG", Integer.toString(mItemsList.size()));
-                Looper.loop();
+                Item lastItem = mItemsList.get(0);
+                Integer size = mItemsList.size();
+                // Log.d("LOG", lastItem.getTitle());
+                ArrayList<Item> tempList = new ArrayList<Item>();
+                Parser.parseRssToList(tempList);
+                // Log.d("LOG", tempList.get(0).getTitle());
+                for (int i = 0; i < tempList.size(); i++) {
+                    if (!tempList.get(i).getTitle().equals(lastItem.getTitle())) {
+                        mItemsList.add(0, tempList.get(i));
+                        // Log.d("LOG", Integer.toString(itemsList.size()));
+                    } else break;
+                }
+                if (size != mItemsList.size()) {
+                    Collections.sort(mItemsList, new Comparator<Item>() {
+                        @Override
+                        public int compare(Item lhs, Item rhs) {
+                            return rhs.getPubDate().compareTo(lhs.getPubDate());
+                        }
+                    });
+                    writeToFile(mItemsList);
+                    sendBroadcastUpdate();
+                    Log.d("LOG", "UPDATED");
+                }
+                Log.d("LOG", "CHECKED");
             }
-        };
-        runnable.run();
+        }).start();
     }
 
     public void readFromFile() {
@@ -153,10 +148,17 @@ public class NewsService extends Service {
         }
     }
 
-    public void sendBroadcast() {
+    public void sendBroadcastUpdate() {
         Intent intent = new Intent();
         intent.setAction("com.example.alexander.recyclerview.NOTIFICATION");
         sendBroadcast(intent);
+    }
+
+    public void sendBroadcastReady() {
+        Intent intent = new Intent();
+        intent.setAction("com.example.alexander.recyclerview.LISTREADY");
+        sendBroadcast(intent);
+        Log.d("LOG", intent.getAction());
     }
 
     public Boolean checkConnection() {
@@ -167,5 +169,16 @@ public class NewsService extends Service {
         } else {
             return false;
         }
+    }
+
+    public void scheduleJob() {
+        JobScheduler jobScheduler =
+                (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(new JobInfo.Builder(1,
+                new ComponentName(this, NewsService.class))
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setMinimumLatency(30 * 1000)
+                .setOverrideDeadline(60 * 1000)
+                .build());
     }
 }

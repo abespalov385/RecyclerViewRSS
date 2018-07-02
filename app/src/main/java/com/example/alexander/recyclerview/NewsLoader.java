@@ -1,5 +1,6 @@
 package com.example.alexander.recyclerview;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
@@ -18,12 +19,15 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
         super(context);
     }
 
+
     @Override
     protected void onStartLoading() {
         if(mData != null) {
             deliverResult(mData);
         } else {
-            forceLoad();
+            if (getContext().getFileStreamPath("news.json").exists()) {
+                forceLoad();
+            }
         }
         super.onStartLoading();
     }
@@ -33,9 +37,6 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
         Log.d("LOG", "Load Start");
         ArrayList<Item> data = new ArrayList<Item>();
         getContext().getFileStreamPath("news.json");
-        if (!getContext().getFileStreamPath("news.json").exists()) {
-            return data;
-        }
         String json = null;
         try {
             InputStream inputStream = getContext().openFileInput("news.json");

@@ -1,14 +1,16 @@
 package com.example.alexander.recyclerview;
 
 import android.app.ActivityOptions;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.graphics.Color;
+import android.os.Build;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
@@ -40,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getSupportLoaderManager().initLoader(0, null, mLoaderCallbacks);
-
         startService(new Intent(this, NewsService.class));
         mItemsList = new ArrayList<Item>();
         mLayoutManager = new LinearLayoutManager(this);
@@ -48,14 +49,15 @@ public class MainActivity extends AppCompatActivity {
         mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                getSupportLoaderManager().getLoader(0).forceLoad();
+                //getSupportLoaderManager().getLoader(0).forceLoad();
                 mSwipeRefresh.setRefreshing(false);
             }
         });
+
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        mAdapter = new MyAdapter();
+        mAdapter = new MyAdapter(mItemsList);
         mAdapter.setClickListener(new MyAdapter.OnItemClickListener() {
             @Override
             public void onClick(View view, int position, ImageView img) {
@@ -76,10 +78,20 @@ public class MainActivity extends AppCompatActivity {
         mBr = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                getSupportLoaderManager().getLoader(0).forceLoad();
+                Log.d("LOG", intent.getAction());
+                switch (intent.getAction()) {
+                    case "com.example.alexander.recyclerview.LISTREADY" :
+                        getSupportLoaderManager().getLoader(0).forceLoad();
+                        break;
+                    case "com.example.alexander.recyclerview.NOTIFICATION" :
+                        break;
+                }
             }
         };
-        registerReceiver(mBr, new IntentFilter("com.example.alexander.recyclerview.NOTIFICATION"));
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("com.example.alexander.recyclerview.NOTIFICATION");
+        filter.addAction("com.example.alexander.recyclerview.LISTREADY");
+        registerReceiver(mBr, filter);
     }
 
     @Override
@@ -148,14 +160,4 @@ public class MainActivity extends AppCompatActivity {
                 public void onLoaderReset(Loader<ArrayList<Item>> loader) {
                 }
             };
-
-    public Boolean checkConnection() {
-        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 }

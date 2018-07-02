@@ -62,7 +62,6 @@ public class Item implements Serializable{
 
     public void setDescription(String mDescription) {
         this.mDescription = mDescription;
-
     }
 
     public String getImg() {

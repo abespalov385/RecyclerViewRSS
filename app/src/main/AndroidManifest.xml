@@ -3,9 +3,11 @@
     package="com.example.alexander.recyclerview">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application
         android:allowBackup="true"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -16,29 +18,24 @@
             android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
+                <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".MyService"
-            android:enabled="true"
-            android:exported="true"
-            android:process=":service" />
 
         <activity android:name=".NewsDetail" />
 
         <service
             android:name=".NewsService"
             android:enabled="true"
-            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"
             android:process=":newsservice" />
 
         <receiver
             android:name=".MyReceiver"
             android:enabled="true"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.example.alexander.recyclerview.NOTIFICATION"/>
             </intent-filter>
