@@ -33,9 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private MyAdapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     private ArrayList<Item> mItemsList;
-    public static Boolean sIsActive = false;
     private BroadcastReceiver mBr;
     private ProgressDialog mProgressDialogLoading;
+    static Boolean sIsActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +57,8 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        mAdapter = new MyAdapter(mItemsList);
+        mAdapter = new MyAdapter();
+        mAdapter.setItems(mItemsList);
         mAdapter.setClickListener(new MyAdapter.OnItemClickListener() {
             @Override
             public void onClick(View view, int position, ImageView img) {
@@ -79,17 +80,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.d("LOG", intent.getAction());
-                switch (intent.getAction()) {
+                getSupportLoaderManager().getLoader(0).onContentChanged();
+                /*switch (intent.getAction()) {
                     case "com.example.alexander.recyclerview.LISTREADY" :
                         getSupportLoaderManager().getLoader(0).forceLoad();
                         break;
                     case "com.example.alexander.recyclerview.NOTIFICATION" :
+
                         break;
-                }
+                }*/
             }
         };
         IntentFilter filter = new IntentFilter();
-        filter.addAction("com.example.alexander.recyclerview.NOTIFICATION");
+        //filter.addAction("com.example.alexander.recyclerview.NOTIFICATION");
         filter.addAction("com.example.alexander.recyclerview.LISTREADY");
         registerReceiver(mBr, filter);
     }
@@ -158,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onLoaderReset(Loader<ArrayList<Item>> loader) {
+                    mAdapter.setData(null);
                 }
             };
 }

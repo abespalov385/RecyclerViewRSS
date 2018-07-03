@@ -1,5 +1,9 @@
 package com.example.alexander.recyclerview;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
@@ -7,8 +11,12 @@ import android.app.job.JobService;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import java.io.IOException;
@@ -20,6 +28,8 @@ import java.util.Comparator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import static com.example.alexander.recyclerview.MyReceiver.CHANNEL_ID;
 
 public class NewsService extends JobService {
 
@@ -46,22 +56,23 @@ public class NewsService extends JobService {
     @Override
     public void onCreate() {
         super.onCreate();
+        createNotificationChannel();
         mItemsList = new ArrayList<Item>();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if(!getFileStreamPath("news.json").exists()) {
-                    Parser.parseRssToList(mItemsList);
-                    writeToFile(mItemsList);
-                }
-            }
-        }).start();
         Log.d("LOG", "OnCreate");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("LOG", "OnStartCommand");
+        if (!getFileStreamPath("news.json").exists()) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Parser.parseRssToList(mItemsList);
+                    writeToFile(mItemsList);
+                }
+            }).start();
+        }
         scheduleJob();
         return super.onStartCommand(intent, flags, startId);
     }
@@ -89,6 +100,10 @@ public class NewsService extends JobService {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                if (!getFileStreamPath("news.json").exists()) {
+                    Parser.parseRssToList(mItemsList);
+                    writeToFile(mItemsList);
+                }
                 if (mItemsList.isEmpty()) {
                     readFromFile();
                 }
@@ -112,7 +127,9 @@ public class NewsService extends JobService {
                         }
                     });
                     writeToFile(mItemsList);
-                    sendBroadcastUpdate();
+                    if (!MainActivity.sIsActive) {
+                        sendNotif();
+                    }
                     Log.d("LOG", "UPDATED");
                 }
                 Log.d("LOG", "CHECKED");
@@ -177,8 +194,38 @@ public class NewsService extends JobService {
         jobScheduler.schedule(new JobInfo.Builder(1,
                 new ComponentName(this, NewsService.class))
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setMinimumLatency(30 * 1000)
-                .setOverrideDeadline(60 * 1000)
+                .setMinimumLatency(60 * 1000)
+                .setOverrideDeadline(120 * 1000)
                 .build());
     }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_name);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    private void sendNotif() {
+        Intent resultIntent = new Intent(this, MainActivity.class);
+        resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0,
+                resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_name)
+                .setContentTitle("News updated")
+                .setContentText("Your news list has been updated")
+                .setContentIntent(resultPendingIntent)
+                .setDefaults(Notification.DEFAULT_ALL)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(1, mBuilder.build());
+    }
+
 }

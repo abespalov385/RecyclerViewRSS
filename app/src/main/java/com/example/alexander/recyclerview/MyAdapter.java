@@ -18,9 +18,6 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     private List<Item> mDataSet;
     private OnItemClickListener mListener;
 
-    public MyAdapter(ArrayList<Item> mItemsList) {
-        this.mDataSet = mItemsList;
-    }
 
     public interface OnItemClickListener {
          void onClick(View view, int position, ImageView image);
@@ -28,6 +25,10 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
 
     public void setClickListener(OnItemClickListener itemClickListener) {
         this.mListener = itemClickListener;
+    }
+
+    public void setItems(ArrayList<Item> data) {
+        this.mDataSet = data;
     }
 
     @NonNull
@@ -57,12 +58,13 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         ViewCompat.setTransitionName(holder.mImage, mDataSet.get(position).getImg());
     }
 
+
     @Override
     public int getItemCount() {
         return mDataSet.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+    public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView mTitle;
         private TextView mDescription;
         private CardView mCv;
@@ -74,13 +76,14 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
             mDescription = (TextView)itemView.findViewById(R.id.description);
             mTitle = (TextView)itemView.findViewById(R.id.title);
             mImage = (ImageView)itemView.findViewById(R.id.image);
-            mCv.setOnClickListener(this);
-        }
-
-        @Override
-        public void onClick(View v) {
-            if (mListener != null)
-                mListener.onClick(v, getAdapterPosition(), mImage);
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mListener != null) {
+                        mListener.onClick(v, getAdapterPosition(), mImage);
+                    }
+                }
+            });
         }
     }
 }

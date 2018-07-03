@@ -3,5 +3,6 @@
     <string name="title">Title</string>
     <string name="description">Description</string>
     <string name="img_description">Image</string>
+    <string name="channel_name">Notification channel</string>
 
 </resources>

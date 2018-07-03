@@ -96,8 +96,8 @@ public class Parser {
 
     public static void writeNewsArray(JsonWriter writer, ArrayList<Item> itemsList) throws IOException {
         writer.beginArray();
-        for (Item item : itemsList) {
-            writeNews(writer, item);
+        for (int i = 0; i < itemsList.size(); i++) {
+            writeNews(writer, itemsList.get(i));
         }
         writer.endArray();
     }

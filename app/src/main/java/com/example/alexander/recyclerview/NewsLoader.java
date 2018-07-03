@@ -1,7 +1,7 @@
 package com.example.alexander.recyclerview;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.support.annotation.Nullable;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 import java.io.IOException;
@@ -69,6 +69,34 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
     @Override
     public void deliverResult(ArrayList<Item> data) {
         mData = data;
-        super.deliverResult(data);
+        if (isStarted()) {
+            super.deliverResult(data);
+        }
+    }
+
+    @Override
+    protected void onStopLoading() {
+        cancelLoad();
+    }
+
+    @Override
+    public void onCanceled(@Nullable ArrayList<Item> data) {
+        super.onCanceled(data);
+        onReleaseResources(data);
+    }
+
+    @Override
+    protected void onReset() {
+        super.onReset();
+        onStopLoading();
+        if (mData != null) {
+            onReleaseResources(mData);
+            mData = null;
+        }
+    }
+
+    protected void onReleaseResources(ArrayList<Item> data) {
+        // For a simple List<> there is nothing to do.  For something
+        // like a Cursor, close it here.
     }
 }
