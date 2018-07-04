@@ -1,4 +1,4 @@
-package com.example.alexander.recyclerview;
+package com.example.alexander.recyclerview.model;
 
 import java.io.Serializable;
 import java.text.DateFormat;
@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class Item implements Serializable{
+public class News implements Serializable{
 
     private String mTitle;
     private String mDescription;
@@ -15,19 +15,7 @@ public class Item implements Serializable{
     private String mLink;
     private Date mPubDate;
 
-    public Item(String mTitle, String mDescription, String mLink, String date) {
-        this.mTitle = mTitle;
-        this.mDescription = mDescription;
-        this.mLink = mLink;
-        DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
-        try {
-            this.mPubDate = formatter.parse(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Item(String mTitle, String mDescription, String mLink, String date , String mImg) {
+    public News(String mTitle, String mDescription, String mLink, String date , String mImg) {
         this.mTitle = mTitle;
         this.mDescription = mDescription;
         this.mLink = mLink;

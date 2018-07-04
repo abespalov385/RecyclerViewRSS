@@ -1,4 +1,4 @@
-package com.example.alexander.recyclerview;
+package com.example.alexander.recyclerview.utils;
 
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
@@ -11,11 +11,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.example.alexander.recyclerview.R;
+import com.example.alexander.recyclerview.model.News;
 import com.squareup.picasso.Picasso;
 
-public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
+public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.ViewHolder> {
 
-    private List<Item> mDataSet;
+    private List<News> mDataSet;
     private OnItemClickListener mListener;
 
 
@@ -27,19 +30,19 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         this.mListener = itemClickListener;
     }
 
-    public void setItems(ArrayList<Item> data) {
+    public void setItems(ArrayList<News> data) {
         this.mDataSet = data;
     }
 
     @NonNull
     @Override
-    public MyAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public NewsFeedAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.card, parent,false);
         ViewHolder vh = new ViewHolder(v);
         return vh;
     }
 
-    public void setData(ArrayList<Item> data) {
+    public void setData(ArrayList<News> data) {
         this.mDataSet.clear();
         if (data != null) {
             this.mDataSet.addAll(data);
@@ -47,7 +50,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MyAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull final NewsFeedAdapter.ViewHolder holder, int position) {
         holder.mTitle.setText(mDataSet.get(position).getTitle());
         holder.mDescription.setText(mDataSet.get(position).getDescription());
         if(mDataSet.get(position).getImg() != null) {
@@ -56,6 +59,14 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
             holder.mImage.setImageBitmap(null);
         }
         ViewCompat.setTransitionName(holder.mImage, mDataSet.get(position).getImg());
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mListener != null) {
+                    mListener.onClick(v, holder.getAdapterPosition(), holder.mImage);
+                }
+            }
+        });
     }
 
 
@@ -76,14 +87,6 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
             mDescription = (TextView)itemView.findViewById(R.id.description);
             mTitle = (TextView)itemView.findViewById(R.id.title);
             mImage = (ImageView)itemView.findViewById(R.id.image);
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (mListener != null) {
-                        mListener.onClick(v, getAdapterPosition(), mImage);
-                    }
-                }
-            });
         }
     }
 }

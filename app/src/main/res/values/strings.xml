@@ -4,5 +4,9 @@
     <string name="description">Description</string>
     <string name="img_description">Image</string>
     <string name="channel_name">Notification channel</string>
+    <string name="last_hour">Last hour</string>
+    <string name="last_3_hours">Last 3 hours</string>
+    <string name="this_day">This day</string>
+    <string name="all">All</string>
 
 </resources>

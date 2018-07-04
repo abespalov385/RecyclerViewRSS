@@ -1,4 +1,4 @@
-package com.example.alexander.recyclerview;
+package com.example.alexander.recyclerview.activities;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
@@ -6,9 +6,10 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.alexander.recyclerview.R;
 import com.squareup.picasso.Picasso;
 
-public class NewsDetail extends AppCompatActivity {
+public class NewsDetailsActivity extends AppCompatActivity {
 
     private TextView mTitle;
     private TextView mDescription;

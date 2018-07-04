@@ -1,16 +1,13 @@
-package com.example.alexander.recyclerview;
+package com.example.alexander.recyclerview.activities;
 
 import android.app.ActivityOptions;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.graphics.Color;
-import android.os.Build;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
@@ -21,57 +18,67 @@ import android.support.v7.widget.RecyclerView;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.example.alexander.recyclerview.model.News;
+import com.example.alexander.recyclerview.utils.NewsFeedAdapter;
+import com.example.alexander.recyclerview.background.NewsLoader;
+import com.example.alexander.recyclerview.background.SyncService;
+import com.example.alexander.recyclerview.R;
+
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class NewsFeedActivity extends AppCompatActivity {
 
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefresh;
-    private MyAdapter mAdapter;
+    private NewsFeedAdapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    private ArrayList<Item> mItemsList;
+    private ArrayList<News> mItemsList;
     private BroadcastReceiver mBr;
     private ProgressDialog mProgressDialogLoading;
-    static Boolean sIsActive = false;
+    private SharedPreferences mSharedPrefs;
+    private Loader mLoader;
+    public static Boolean sIsActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        getSupportLoaderManager().initLoader(0, null, mLoaderCallbacks);
-        startService(new Intent(this, NewsService.class));
-        mItemsList = new ArrayList<Item>();
+        mLoader = getSupportLoaderManager().initLoader(0, null, mLoaderCallbacks);
+        startService(new Intent(this, SyncService.class));
+        mSharedPrefs = getSharedPreferences("Filter", Context.MODE_PRIVATE);
+        Toast.makeText(this, mSharedPrefs.getString("Filter", getResources().getString(R.string.last_3_hours)),
+                Toast.LENGTH_SHORT).show();
+        mItemsList = new ArrayList<News>();
         mLayoutManager = new LinearLayoutManager(this);
         mSwipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
         mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                //getSupportLoaderManager().getLoader(0).forceLoad();
                 mSwipeRefresh.setRefreshing(false);
             }
         });
-
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        mAdapter = new MyAdapter();
+        mAdapter = new NewsFeedAdapter();
         mAdapter.setItems(mItemsList);
-        mAdapter.setClickListener(new MyAdapter.OnItemClickListener() {
+        mAdapter.setClickListener(new NewsFeedAdapter.OnItemClickListener() {
             @Override
             public void onClick(View view, int position, ImageView img) {
-                // Log.d("LOG", "Title " + mItemsList.get(position).getTitle() +
-                // ", Description " + mItemsList.get(position).getDescription());
-                Intent intent = new Intent(MainActivity.this, NewsDetail.class);
+                Intent intent = new Intent(NewsFeedActivity.this, NewsDetailsActivity.class);
                 intent.putExtra("Title", mItemsList.get(position).getTitle());
                 intent.putExtra("Description", mItemsList.get(position).getDescription());
                 intent.putExtra("Img", mItemsList.get(position).getImg());
                 Log.d("LOG", img.getTransitionName());
                 Pair imgPair = Pair.create(img, ViewCompat.getTransitionName(img));
                 ActivityOptions options =
-                        ActivityOptions.makeSceneTransitionAnimation(MainActivity.this, imgPair);
+                        ActivityOptions.makeSceneTransitionAnimation(NewsFeedActivity.this, imgPair);
                 startActivity(intent, options.toBundle());
             }
         });
@@ -80,19 +87,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.d("LOG", intent.getAction());
-                getSupportLoaderManager().getLoader(0).onContentChanged();
-                /*switch (intent.getAction()) {
-                    case "com.example.alexander.recyclerview.LISTREADY" :
-                        getSupportLoaderManager().getLoader(0).forceLoad();
-                        break;
-                    case "com.example.alexander.recyclerview.NOTIFICATION" :
-
-                        break;
-                }*/
+                mLoader.onContentChanged();
             }
         };
         IntentFilter filter = new IntentFilter();
-        //filter.addAction("com.example.alexander.recyclerview.NOTIFICATION");
         filter.addAction("com.example.alexander.recyclerview.LISTREADY");
         registerReceiver(mBr, filter);
     }
@@ -125,6 +123,48 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.newsmenu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        SharedPreferences.Editor editor = mSharedPrefs.edit();
+        switch (item.getItemId()) {
+            case R.id.last_hour:
+                Log.d("LOG", "Last hour");
+                editor.putString("Filter", getResources().getString(R.string.last_hour));
+                editor.apply();
+                mLoader.onContentChanged();
+                Toast.makeText(this, "Last hour", Toast.LENGTH_SHORT).show();
+                return true;
+            case R.id.last_3_hours:
+                Log.d("LOG", "Last 3 hours");
+                editor.putString("Filter", getResources().getString(R.string.last_3_hours));
+                editor.apply();
+                mLoader.onContentChanged();
+                Toast.makeText(this, "Last 3 hours", Toast.LENGTH_SHORT).show();
+                return true;
+            case R.id.this_day:
+                Log.d("LOG", "This day");
+                editor.putString("Filter", getResources().getString(R.string.this_day));
+                editor.apply();
+                mLoader.onContentChanged();
+                Toast.makeText(this, "This day", Toast.LENGTH_SHORT).show();
+                return true;
+            case R.id.all:
+                Log.d("LOG", "All");
+                editor.putString("Filter", getResources().getString(R.string.all));
+                editor.apply();
+                mLoader.onContentChanged();
+                Toast.makeText(this, "All", Toast.LENGTH_SHORT).show();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     public void showProgressDialog(String dialog) {
         if (mProgressDialogLoading == null) {
             mProgressDialogLoading = new ProgressDialog(this);
@@ -141,17 +181,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private LoaderManager.LoaderCallbacks<ArrayList<Item>>
+    private LoaderManager.LoaderCallbacks<ArrayList<News>>
             mLoaderCallbacks =
-            new LoaderManager.LoaderCallbacks<ArrayList<Item>>() {
+            new LoaderManager.LoaderCallbacks<ArrayList<News>>() {
                 @Override
-                public Loader<ArrayList<Item>> onCreateLoader(int id, Bundle args) {
+                public Loader<ArrayList<News>> onCreateLoader(int id, Bundle args) {
                     showProgressDialog("Loading");
-                    return new NewsLoader(MainActivity.this);
+                    return new NewsLoader(NewsFeedActivity.this);
                 }
 
                 @Override
-                public void onLoadFinished(Loader<ArrayList<Item>> loader, ArrayList<Item> data) {
+                public void onLoadFinished(Loader<ArrayList<News>> loader, ArrayList<News> data) {
                     if (mAdapter.getItemCount() != data.size()) {
                         hideProgressDialog();
                         mAdapter.setData(data);
@@ -160,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void onLoaderReset(Loader<ArrayList<Item>> loader) {
+                public void onLoaderReset(Loader<ArrayList<News>> loader) {
                     mAdapter.setData(null);
                 }
             };

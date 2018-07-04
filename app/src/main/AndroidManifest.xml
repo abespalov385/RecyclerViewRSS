@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name=".activities.NewsFeedActivity"
             android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,23 +24,15 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".NewsDetail" />
+        <activity android:name=".activities.NewsDetailsActivity" />
 
         <service
-            android:name=".NewsService"
+            android:name=".background.SyncService"
             android:enabled="true"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="false"
             android:process=":newsservice" />
 
-        <receiver
-            android:name=".MyReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.example.alexander.recyclerview.NOTIFICATION"/>
-            </intent-filter>
-        </receiver>
     </application>
 
 </manifest>

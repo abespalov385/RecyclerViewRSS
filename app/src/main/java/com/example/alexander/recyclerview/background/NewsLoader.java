@@ -1,19 +1,32 @@
-package com.example.alexander.recyclerview;
+package com.example.alexander.recyclerview.background;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.support.annotation.Nullable;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
+
+import com.example.alexander.recyclerview.R;
+import com.example.alexander.recyclerview.model.News;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
+public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
 
-    private ArrayList<Item> mData;
+    private ArrayList<News> mData;
+    private SharedPreferences mSharedPrefs;
+    private Resources mRes;
+    private static final long DELTA_ONE_HOUR = 1000 * 60 * 60;
+    private static final long DELTA_THREE_HOURS = 1000 * 60 * 60 * 3;
+    private static final long DELTA_ONE_DAY = 1000 * 60 * 60 * 24;
 
     public NewsLoader(Context context) {
         super(context);
@@ -22,6 +35,8 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
 
     @Override
     protected void onStartLoading() {
+        mSharedPrefs = getContext().getSharedPreferences("Filter", Context.MODE_PRIVATE);
+        mRes = getContext().getResources();
         if(mData != null) {
             deliverResult(mData);
         } else {
@@ -33,9 +48,21 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
     }
 
     @Override
-    public ArrayList<Item> loadInBackground() {
-        Log.d("LOG", "Load Start");
-        ArrayList<Item> data = new ArrayList<Item>();
+    public ArrayList<News> loadInBackground() {
+        long delta = 0;
+        switch (mSharedPrefs.getString("Filter", mRes.getString(R.string.last_3_hours))) {
+            case "Last hour":
+                delta = DELTA_ONE_HOUR;
+                break;
+            case "Last 3 hours":
+                delta = DELTA_THREE_HOURS;
+                break;
+            case "This day":
+                delta = DELTA_ONE_DAY;
+                break;
+        }
+        long time = Calendar.getInstance().getTimeInMillis();
+        ArrayList<News> data = new ArrayList<News>();
         getContext().getFileStreamPath("news.json");
         String json = null;
         try {
@@ -54,11 +81,12 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
             JSONArray news = obj.getJSONArray("news");
             for(int i = 0; i < news.length(); i++) {
                 JSONObject card = news.getJSONObject(i);
-                data.add(new Item(card.getString("title"),
+                data.add(new News(card.getString("title"),
                         card.getString("description"),
                         card.getString("link"),
                         card.getString("pubDate"),
                         card.getString("img")));
+                if (delta != 0 && data.get(i).getPubDate().getTime() < (time - delta)) break;
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -67,7 +95,7 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
     }
 
     @Override
-    public void deliverResult(ArrayList<Item> data) {
+    public void deliverResult(ArrayList<News> data) {
         mData = data;
         if (isStarted()) {
             super.deliverResult(data);
@@ -80,7 +108,7 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
     }
 
     @Override
-    public void onCanceled(@Nullable ArrayList<Item> data) {
+    public void onCanceled(@Nullable ArrayList<News> data) {
         super.onCanceled(data);
         onReleaseResources(data);
     }
@@ -95,7 +123,7 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<Item>> {
         }
     }
 
-    protected void onReleaseResources(ArrayList<Item> data) {
+    protected void onReleaseResources(ArrayList<News> data) {
         // For a simple List<> there is nothing to do.  For something
         // like a Cursor, close it here.
     }

@@ -1,4 +1,4 @@
-package com.example.alexander.recyclerview;
+package com.example.alexander.recyclerview.background;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -11,13 +11,17 @@ import android.app.job.JobService;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
+
+import com.example.alexander.recyclerview.R;
+import com.example.alexander.recyclerview.activities.NewsFeedActivity;
+import com.example.alexander.recyclerview.model.News;
+import com.example.alexander.recyclerview.utils.Parser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,13 +33,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static com.example.alexander.recyclerview.MyReceiver.CHANNEL_ID;
+public class SyncService extends JobService {
 
-public class NewsService extends JobService {
+    private static final String CHANNEL_ID = "News channel";
+    private ArrayList<News> mItemsList;
 
-    private ArrayList<Item> mItemsList;
-
-    public NewsService() {
+    public SyncService() {
     }
 
     @Override
@@ -57,7 +60,7 @@ public class NewsService extends JobService {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        mItemsList = new ArrayList<Item>();
+        mItemsList = new ArrayList<News>();
         Log.d("LOG", "OnCreate");
     }
 
@@ -82,7 +85,7 @@ public class NewsService extends JobService {
         super.onDestroy();
     }
 
-    public void writeToFile(ArrayList<Item> data) {
+    public void writeToFile(ArrayList<News> data) {
         try {
             if (checkConnection()) {
                 OutputStream outputStream = openFileOutput("news.json", Context.MODE_PRIVATE);
@@ -107,10 +110,10 @@ public class NewsService extends JobService {
                 if (mItemsList.isEmpty()) {
                     readFromFile();
                 }
-                Item lastItem = mItemsList.get(0);
+                News lastItem = mItemsList.get(0);
                 Integer size = mItemsList.size();
                 // Log.d("LOG", lastItem.getTitle());
-                ArrayList<Item> tempList = new ArrayList<Item>();
+                ArrayList<News> tempList = new ArrayList<News>();
                 Parser.parseRssToList(tempList);
                 // Log.d("LOG", tempList.get(0).getTitle());
                 for (int i = 0; i < tempList.size(); i++) {
@@ -120,14 +123,14 @@ public class NewsService extends JobService {
                     } else break;
                 }
                 if (size != mItemsList.size()) {
-                    Collections.sort(mItemsList, new Comparator<Item>() {
+                    Collections.sort(mItemsList, new Comparator<News>() {
                         @Override
-                        public int compare(Item lhs, Item rhs) {
+                        public int compare(News lhs, News rhs) {
                             return rhs.getPubDate().compareTo(lhs.getPubDate());
                         }
                     });
                     writeToFile(mItemsList);
-                    if (!MainActivity.sIsActive) {
+                    if (!NewsFeedActivity.sIsActive) {
                         sendNotif();
                     }
                     Log.d("LOG", "UPDATED");
@@ -154,7 +157,7 @@ public class NewsService extends JobService {
             JSONArray news = obj.getJSONArray("news");
             for (int i = 0; i < news.length(); i++) {
                 JSONObject card = news.getJSONObject(i);
-                mItemsList.add(new Item(card.getString("title"),
+                mItemsList.add(new News(card.getString("title"),
                         card.getString("description"),
                         card.getString("link"),
                         card.getString("pubDate"),
@@ -192,10 +195,10 @@ public class NewsService extends JobService {
         JobScheduler jobScheduler =
                 (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
         jobScheduler.schedule(new JobInfo.Builder(1,
-                new ComponentName(this, NewsService.class))
+                new ComponentName(this, SyncService.class))
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setMinimumLatency(60 * 1000)
-                .setOverrideDeadline(120 * 1000)
+                .setMinimumLatency(180 * 1000)
+                .setOverrideDeadline(300 * 1000)
                 .build());
     }
 
@@ -212,7 +215,7 @@ public class NewsService extends JobService {
     }
 
     private void sendNotif() {
-        Intent resultIntent = new Intent(this, MainActivity.class);
+        Intent resultIntent = new Intent(this, NewsFeedActivity.class);
         resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0,
                 resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);

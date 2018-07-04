@@ -1,7 +1,10 @@
-package com.example.alexander.recyclerview;
+package com.example.alexander.recyclerview.utils;
 
 import android.util.JsonWriter;
 import android.util.Log;
+
+import com.example.alexander.recyclerview.model.News;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -10,7 +13,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Locale;
-import org.json.JSONArray;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -18,7 +21,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import static android.content.ContentValues.TAG;
 
 public class Parser {
-    public static ArrayList<Item> parseRssToList(ArrayList<Item> itemsList) {
+    public static ArrayList<News> parseRssToList(ArrayList<News> itemsList) {
         try {
             URL url = new URL("https://lenta.ru/rss");
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -66,7 +69,7 @@ public class Parser {
                 } else if (eventType == XmlPullParser.END_TAG && xpp.getName().equalsIgnoreCase("item")) {
                     insideItem = false;
                     if (img!=null) {
-                        itemsList.add(new Item(title, description, link, pubDate, img));
+                        itemsList.add(new News(title, description, link, pubDate, img));
                         img = null;
                         title = null;
                         description = null;
@@ -83,7 +86,7 @@ public class Parser {
         return itemsList;
     }
 
-    public static String writeJsonStream(OutputStream out, ArrayList<Item> itemsList) throws IOException {
+    public static String writeJsonStream(OutputStream out, ArrayList<News> itemsList) throws IOException {
         JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
         writer.setIndent("  ");
         writer.beginObject();
@@ -94,7 +97,7 @@ public class Parser {
         return out.toString();
     }
 
-    public static void writeNewsArray(JsonWriter writer, ArrayList<Item> itemsList) throws IOException {
+    public static void writeNewsArray(JsonWriter writer, ArrayList<News> itemsList) throws IOException {
         writer.beginArray();
         for (int i = 0; i < itemsList.size(); i++) {
             writeNews(writer, itemsList.get(i));
@@ -102,7 +105,7 @@ public class Parser {
         writer.endArray();
     }
 
-    public static void writeNews(JsonWriter writer, Item item) throws IOException {
+    public static void writeNews(JsonWriter writer, News item) throws IOException {
         DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
         writer.beginObject();
         writer.name("title").value(item.getTitle());
