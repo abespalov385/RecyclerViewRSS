@@ -75,6 +75,8 @@ public class SyncService extends JobService {
                     writeToFile(mItemsList);
                 }
             }).start();
+        } else {
+            forceUpdate();
         }
         scheduleJob();
         return super.onStartCommand(intent, flags, startId);
@@ -138,6 +140,12 @@ public class SyncService extends JobService {
                 Log.d("LOG", "CHECKED");
             }
         }).start();
+    }
+
+    public void forceUpdate() {
+        if (checkConnection()) {
+            checkUpdates();
+        }
     }
 
     public void readFromFile() {
@@ -230,5 +238,4 @@ public class SyncService extends JobService {
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.notify(1, mBuilder.build());
     }
-
 }

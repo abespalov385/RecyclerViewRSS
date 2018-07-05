@@ -60,6 +60,7 @@ public class NewsFeedActivity extends AppCompatActivity {
         mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                startService(new Intent(NewsFeedActivity.this, SyncService.class));
                 mSwipeRefresh.setRefreshing(false);
             }
         });
