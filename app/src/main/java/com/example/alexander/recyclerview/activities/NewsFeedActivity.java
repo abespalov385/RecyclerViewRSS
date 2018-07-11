@@ -32,18 +32,21 @@ import com.example.alexander.recyclerview.R;
 
 import java.util.ArrayList;
 
+
+/**
+ * Main application activity.
+ * Contains RecyclerView with loaded data from JSON File
+ * and allow to open single news item in another activity.
+ */
 public class NewsFeedActivity extends AppCompatActivity {
 
-    private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefresh;
     private NewsFeedAdapter mAdapter;
-    private RecyclerView.LayoutManager mLayoutManager;
     private ArrayList<News> mItemsList;
     private BroadcastReceiver mBr;
     private ProgressDialog mProgressDialogLoading;
     private SharedPreferences mSharedPrefs;
     private Loader mLoader;
-    public static Boolean sIsActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,49 +58,55 @@ public class NewsFeedActivity extends AppCompatActivity {
         Toast.makeText(this, mSharedPrefs.getString("Filter", getResources().getString(R.string.last_3_hours)),
                 Toast.LENGTH_SHORT).show();
         mItemsList = new ArrayList<News>();
-        mLayoutManager = new LinearLayoutManager(this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         mSwipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
         mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                // Trigger service forceUpdate() method
                 startService(new Intent(NewsFeedActivity.this, SyncService.class));
                 mSwipeRefresh.setRefreshing(false);
             }
         });
-        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setLayoutManager(mLayoutManager);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(layoutManager);
         mAdapter = new NewsFeedAdapter();
         mAdapter.setItems(mItemsList);
         mAdapter.setClickListener(new NewsFeedAdapter.OnItemClickListener() {
             @Override
             public void onClick(View view, int position, ImageView img) {
                 Intent intent = new Intent(NewsFeedActivity.this, NewsDetailsActivity.class);
+                // Putting extras to intent to restore it in new activity
                 intent.putExtra("Title", mItemsList.get(position).getTitle());
                 intent.putExtra("Description", mItemsList.get(position).getDescription());
                 intent.putExtra("Img", mItemsList.get(position).getImg());
                 Log.d("LOG", img.getTransitionName());
+                // Set image as shared element in transition animation
                 Pair imgPair = Pair.create(img, ViewCompat.getTransitionName(img));
                 ActivityOptions options =
                         ActivityOptions.makeSceneTransitionAnimation(NewsFeedActivity.this, imgPair);
                 startActivity(intent, options.toBundle());
             }
         });
-        mRecyclerView.setAdapter(mAdapter);
+        recyclerView.setAdapter(mAdapter);
         mBr = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.d("LOG", intent.getAction());
+                // Trigger updating loader then receive broadcast from service
                 mLoader.onContentChanged();
             }
         };
         IntentFilter filter = new IntentFilter();
-        filter.addAction("com.example.alexander.recyclerview.LISTREADY");
+        filter.addAction(SyncService.LIST_READY);
+        // Don't use LocalBroadcastReciever because service working in other process
         registerReceiver(mBr, filter);
     }
 
     @Override
     protected void onDestroy() {
+        // Unregister receiver to prevent leaking out of the activity context
         unregisterReceiver(mBr);
         super.onDestroy();
     }
@@ -105,17 +114,16 @@ public class NewsFeedActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        sIsActive = true;
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        sIsActive = false;
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
+        // Handle configuration change to avoid destroying and recreating activity when screen rotate
         super.onConfigurationChanged(newConfig);
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
@@ -137,7 +145,9 @@ public class NewsFeedActivity extends AppCompatActivity {
             case R.id.last_hour:
                 Log.d("LOG", "Last hour");
                 editor.putString("Filter", getResources().getString(R.string.last_hour));
+                // Save filter to SharedPrefs to restore it then open app again
                 editor.apply();
+                // Reload data depends on selected filter
                 mLoader.onContentChanged();
                 Toast.makeText(this, "Last hour", Toast.LENGTH_SHORT).show();
                 return true;
@@ -166,17 +176,23 @@ public class NewsFeedActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void showProgressDialog(String dialog) {
+    /**
+     * Show progress dialog when list is loading.
+     */
+    private void showProgressDialog() {
         if (mProgressDialogLoading == null) {
             mProgressDialogLoading = new ProgressDialog(this);
-            mProgressDialogLoading.setMessage(dialog);
+            mProgressDialogLoading.setMessage("Loading");
             mProgressDialogLoading.setIndeterminate(true);
             mProgressDialogLoading.setCancelable(false);
         }
         mProgressDialogLoading.show();
     }
 
-    public void hideProgressDialog() {
+    /**
+     * Hide progress dialog if it's showing.
+     */
+    private void hideProgressDialog() {
         if (mProgressDialogLoading != null && mProgressDialogLoading.isShowing()) {
             mProgressDialogLoading.dismiss();
         }
@@ -187,12 +203,14 @@ public class NewsFeedActivity extends AppCompatActivity {
             new LoaderManager.LoaderCallbacks<ArrayList<News>>() {
                 @Override
                 public Loader<ArrayList<News>> onCreateLoader(int id, Bundle args) {
-                    showProgressDialog("Loading");
+                    // Show progress dialog while data is loading
+                    showProgressDialog();
                     return new NewsLoader(NewsFeedActivity.this);
                 }
 
                 @Override
                 public void onLoadFinished(Loader<ArrayList<News>> loader, ArrayList<News> data) {
+                    // Update adapter data if new items loaded
                     if (mAdapter.getItemCount() != data.size()) {
                         hideProgressDialog();
                         mAdapter.setData(data);

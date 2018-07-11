@@ -2,7 +2,6 @@ package com.example.alexander.recyclerview.utils;
 
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,15 +20,22 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.ViewHo
     private List<News> mDataSet;
     private OnItemClickListener mListener;
 
-
     public interface OnItemClickListener {
          void onClick(View view, int position, ImageView image);
     }
 
+    /**
+     * Set item click listener.
+     * @param itemClickListener on item click listener
+     */
     public void setClickListener(OnItemClickListener itemClickListener) {
         this.mListener = itemClickListener;
     }
 
+    /**
+     * Set adapter data set.
+     * @param data ArrayList with news items
+     */
     public void setItems(ArrayList<News> data) {
         this.mDataSet = data;
     }
@@ -42,6 +48,10 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.ViewHo
         return vh;
     }
 
+    /**
+     * Clear ArrayList and insert new data to it.
+     * @param data ArrayList with news items
+     */
     public void setData(ArrayList<News> data) {
         this.mDataSet.clear();
         if (data != null) {
@@ -58,6 +68,7 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.ViewHo
         } else {
             holder.mImage.setImageBitmap(null);
         }
+        // Set transition name for ViewHolder image that will be used for transition animation
         ViewCompat.setTransitionName(holder.mImage, mDataSet.get(position).getImg());
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,15 +86,16 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.ViewHo
         return mDataSet.size();
     }
 
+    /**
+     * Provide a reference to the views for each data item.
+     */
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView mTitle;
         private TextView mDescription;
-        private CardView mCv;
         private ImageView mImage;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            mCv = (CardView)itemView.findViewById(R.id.card_view);
             mDescription = (TextView)itemView.findViewById(R.id.description);
             mTitle = (TextView)itemView.findViewById(R.id.title);
             mImage = (ImageView)itemView.findViewById(R.id.image);

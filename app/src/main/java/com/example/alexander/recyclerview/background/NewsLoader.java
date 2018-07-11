@@ -19,6 +19,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * A custom loader that loads all news from saved JSONFile.
+ */
 public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
 
     private ArrayList<News> mData;
@@ -32,11 +35,11 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
         super(context);
     }
 
-
     @Override
     protected void onStartLoading() {
         mSharedPrefs = getContext().getSharedPreferences("Filter", Context.MODE_PRIVATE);
         mRes = getContext().getResources();
+        // If we already have data, deliver it, else load data from file
         if(mData != null) {
             deliverResult(mData);
         } else {
@@ -50,6 +53,7 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
     @Override
     public ArrayList<News> loadInBackground() {
         long delta = 0;
+        // Checks SharedPrefs for delta time value. If we need all news, keep delta = 0
         switch (mSharedPrefs.getString("Filter", mRes.getString(R.string.last_3_hours))) {
             case "Last hour":
                 delta = DELTA_ONE_HOUR;
@@ -63,7 +67,6 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
         }
         long time = Calendar.getInstance().getTimeInMillis();
         ArrayList<News> data = new ArrayList<News>();
-        getContext().getFileStreamPath("news.json");
         String json = null;
         try {
             InputStream inputStream = getContext().openFileInput("news.json");
@@ -123,6 +126,10 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
         }
     }
 
+    /**
+     * Helper function to take care of releasing resources.
+     * @param data releasing resources
+     */
     protected void onReleaseResources(ArrayList<News> data) {
         // For a simple List<> there is nothing to do.  For something
         // like a Cursor, close it here.

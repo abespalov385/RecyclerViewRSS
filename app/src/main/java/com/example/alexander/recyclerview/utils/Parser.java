@@ -8,6 +8,7 @@ import com.example.alexander.recyclerview.model.News;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -20,8 +21,16 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import static android.content.ContentValues.TAG;
 
+/**
+ * Class provides static methods that parse RSS feed to ArrayList
+ * and write ArrayList to JSON File.
+ */
 public class Parser {
-    public static ArrayList<News> parseRssToList(ArrayList<News> itemsList) {
+    /**
+     * Parse RSS feed to ArrayList.
+     * @param itemsList result ArrayList
+     */
+    public static void parseRssToList(ArrayList<News> itemsList) {
         try {
             URL url = new URL("https://lenta.ru/rss");
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -83,10 +92,15 @@ public class Parser {
         } catch (XmlPullParserException e) {
             Log.e(TAG, "Error", e);
         }
-        return itemsList;
     }
 
-    public static String writeJsonStream(OutputStream out, ArrayList<News> itemsList) throws IOException {
+    /**
+     * Write ArrayList of news items to JSON Stream.
+     * @param out file output stream
+     * @param itemsList ArrayList with news items
+     * @throws IOException if JSON file not found
+     */
+    public static void writeJsonStream(OutputStream out, ArrayList<News> itemsList) throws IOException {
         JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
         writer.setIndent("  ");
         writer.beginObject();
@@ -94,9 +108,14 @@ public class Parser {
         writeNewsArray(writer, itemsList);
         writer.endObject();
         writer.close();
-        return out.toString();
     }
 
+    /**
+     * Write JSON Array.
+     * @param writer JSON Writer
+     * @param itemsList ArrayList with news items
+     * @throws IOException if JSON file not found
+     */
     public static void writeNewsArray(JsonWriter writer, ArrayList<News> itemsList) throws IOException {
         writer.beginArray();
         for (int i = 0; i < itemsList.size(); i++) {
@@ -105,6 +124,12 @@ public class Parser {
         writer.endArray();
     }
 
+    /**
+     * Write single news item to JSON Array.
+     * @param writer JSON Writer
+     * @param item news item
+     * @throws IOException if JSON file not found
+     */
     public static void writeNews(JsonWriter writer, News item) throws IOException {
         DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
         writer.beginObject();
@@ -116,13 +141,3 @@ public class Parser {
         writer.endObject();
     }
 }
-
-
-
-
-
-
-
-
-
-

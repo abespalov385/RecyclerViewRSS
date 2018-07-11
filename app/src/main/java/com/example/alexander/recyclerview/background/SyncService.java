@@ -33,9 +33,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * Service for loading RSS feed list, checking updates of it and send notifications.
+ */
 public class SyncService extends JobService {
 
     private static final String CHANNEL_ID = "News channel";
+    public static final String LIST_READY = "com.example.alexander.recyclerview.LISTREADY";
     private ArrayList<News> mItemsList;
 
     public SyncService() {
@@ -46,7 +50,8 @@ public class SyncService extends JobService {
         if (checkConnection()) {
             checkUpdates();
         }
-        jobFinished(params, true);
+        jobFinished(params, false);
+        // Reschedule job
         scheduleJob();
         return true;
     }
@@ -67,6 +72,8 @@ public class SyncService extends JobService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("LOG", "OnStartCommand");
+        // When activity start server, create JSON file if it doesn't exist
+        // or check updates
         if (!getFileStreamPath("news.json").exists()) {
             new Thread(new Runnable() {
                 @Override
@@ -87,7 +94,11 @@ public class SyncService extends JobService {
         super.onDestroy();
     }
 
-    public void writeToFile(ArrayList<News> data) {
+    /**
+     * Write news items from ArrayList to JSONFile
+     * @param data ArrayList with news items
+     */
+    private void writeToFile(ArrayList<News> data) {
         try {
             if (checkConnection()) {
                 OutputStream outputStream = openFileOutput("news.json", Context.MODE_PRIVATE);
@@ -101,7 +112,12 @@ public class SyncService extends JobService {
         }
     }
 
-    public void checkUpdates() {
+    /**
+     * Parse RSS to a new list. Compare this list with old list and add different items.
+     * Sort result list by news publication date.
+     * Send notification if new items added to list.
+     */
+    private void checkUpdates() {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -119,8 +135,8 @@ public class SyncService extends JobService {
                 Parser.parseRssToList(tempList);
                 // Log.d("LOG", tempList.get(0).getTitle());
                 for (int i = 0; i < tempList.size(); i++) {
-                    if (!tempList.get(i).getTitle().equals(lastItem.getTitle())) {
-                        mItemsList.add(0, tempList.get(i));
+                    if (!tempList.get(i).getLink().equals(lastItem.getLink())) {
+                        mItemsList.add(tempList.get(i));
                         // Log.d("LOG", Integer.toString(itemsList.size()));
                     } else break;
                 }
@@ -132,9 +148,7 @@ public class SyncService extends JobService {
                         }
                     });
                     writeToFile(mItemsList);
-                    if (!NewsFeedActivity.sIsActive) {
-                        sendNotif();
-                    }
+                    sendNotif();
                     Log.d("LOG", "UPDATED");
                 }
                 Log.d("LOG", "CHECKED");
@@ -142,13 +156,19 @@ public class SyncService extends JobService {
         }).start();
     }
 
-    public void forceUpdate() {
+    /**
+     * If device have internet connection check updates.
+     */
+    private void forceUpdate() {
         if (checkConnection()) {
             checkUpdates();
         }
     }
 
-    public void readFromFile() {
+    /**
+     * Read JSONFile with news items and fill mItemsList.
+     */
+    private void readFromFile() {
         String json = null;
         try {
             InputStream inputStream = openFileInput("news.json");
@@ -176,20 +196,21 @@ public class SyncService extends JobService {
         }
     }
 
-    public void sendBroadcastUpdate() {
+    /**
+     * Send broadcast to NewsFeedActivity and triggers NewsLoader update.
+     */
+    private void sendBroadcastReady() {
         Intent intent = new Intent();
-        intent.setAction("com.example.alexander.recyclerview.NOTIFICATION");
-        sendBroadcast(intent);
-    }
-
-    public void sendBroadcastReady() {
-        Intent intent = new Intent();
-        intent.setAction("com.example.alexander.recyclerview.LISTREADY");
+        intent.setAction(LIST_READY);
         sendBroadcast(intent);
         Log.d("LOG", intent.getAction());
     }
 
-    public Boolean checkConnection() {
+    /**
+     * Check device internet connection status.
+     * @return true if device have internet connection , false if it doesn't.
+     */
+    private Boolean checkConnection() {
         ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         if (netInfo != null && netInfo.isConnectedOrConnecting()) {
@@ -199,9 +220,14 @@ public class SyncService extends JobService {
         }
     }
 
-    public void scheduleJob() {
+    /**
+     * Schedule job for checking updates of RSS feed.
+     * Don't use .setPeriodic() because on new APIs this interval auto increase to 15 min.
+     */
+    private void scheduleJob() {
         JobScheduler jobScheduler =
                 (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+
         jobScheduler.schedule(new JobInfo.Builder(1,
                 new ComponentName(this, SyncService.class))
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
@@ -210,6 +236,9 @@ public class SyncService extends JobService {
                 .build());
     }
 
+    /**
+     * Register notification channel for devices with API 26+.
+     */
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = getString(R.string.channel_name);
@@ -222,6 +251,9 @@ public class SyncService extends JobService {
         }
     }
 
+    /**
+     * Send notification what news list has been updated.
+     */
     private void sendNotif() {
         Intent resultIntent = new Intent(this, NewsFeedActivity.class);
         resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
