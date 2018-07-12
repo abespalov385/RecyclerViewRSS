@@ -8,7 +8,6 @@ import com.example.alexander.recyclerview.model.News;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -26,6 +25,15 @@ import static android.content.ContentValues.TAG;
  * and write ArrayList to JSON File.
  */
 public class Parser {
+
+    public static final String TITLE = "title";
+    public static final String DESCRIPTION = "description";
+    public static final String LINK = "link";
+    public static final String PUB_DATE = "pubDate";
+    public static final String IMG = "img";
+    public static final String FILE = "news.json";
+    public static final String DATE_PATTERN = "EEE, d MMM yyyy HH:mm:ss Z";
+
     /**
      * Parse RSS feed to ArrayList.
      * @param itemsList result ArrayList
@@ -49,22 +57,23 @@ public class Parser {
                 if (eventType == XmlPullParser.START_TAG) {
                     if (xpp.getName().equalsIgnoreCase("item")) {
                         insideItem = true;
-                        } else if (xpp.getName().equalsIgnoreCase("title")) {
+                    // While insideItem = true, parse all needed tags
+                    } else if (xpp.getName().equalsIgnoreCase(TITLE)) {
                         if (insideItem) {
                             title = xpp.nextText();
                             //  Log.i("Title: ",xpp.nextText());
                         }
-                    } else if (xpp.getName().equalsIgnoreCase("description")) {
-                        if (insideItem){
+                    } else if (xpp.getName().equalsIgnoreCase(DESCRIPTION)) {
+                        if (insideItem) {
                             description = xpp.nextText();
                             //  Log.i("Description: ",xpp.nextText());
                         }
-                    } else if (xpp.getName().equalsIgnoreCase("link")) {
-                        if (insideItem){
+                    } else if (xpp.getName().equalsIgnoreCase(LINK)) {
+                        if (insideItem) {
                             link = xpp.nextText();
                             //  Log.i("Description: ",xpp.nextText());
                         }
-                    } else if (xpp.getName().equalsIgnoreCase("pubDate")) {
+                    } else if (xpp.getName().equalsIgnoreCase(PUB_DATE)) {
                         if (insideItem) {
                             pubDate = xpp.nextText();
                             //  Log.i("Description: ",xpp.nextText());
@@ -76,8 +85,9 @@ public class Parser {
                         }
                     }
                 } else if (eventType == XmlPullParser.END_TAG && xpp.getName().equalsIgnoreCase("item")) {
+                    // When insideItem = false, create new news item based on parsed information
                     insideItem = false;
-                    if (img!=null) {
+                    if (img != null) {
                         itemsList.add(new News(title, description, link, pubDate, img));
                         img = null;
                         title = null;
@@ -85,7 +95,7 @@ public class Parser {
                         pubDate = null;
                     }
                 }
-                eventType = xpp.next(); // move to next element
+                eventType = xpp.next(); // move to next item element
             }
         } catch (IOException e) {
             Log.e(TAG, "Error", e);
@@ -131,13 +141,13 @@ public class Parser {
      * @throws IOException if JSON file not found
      */
     public static void writeNews(JsonWriter writer, News item) throws IOException {
-        DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
+        DateFormat formatter = new SimpleDateFormat(DATE_PATTERN, Locale.US);
         writer.beginObject();
-        writer.name("title").value(item.getTitle());
-        writer.name("description").value(item.getDescription());
-        writer.name("link").value(item.getLink());
-        writer.name("pubDate").value(formatter.format(item.getPubDate()));
-        writer.name("img").value(item.getImg());
+        writer.name(TITLE).value(item.getTitle());
+        writer.name(DESCRIPTION).value(item.getDescription());
+        writer.name(LINK).value(item.getLink());
+        writer.name(PUB_DATE).value(formatter.format(item.getPubDate()));
+        writer.name(IMG).value(item.getImg());
         writer.endObject();
     }
 }

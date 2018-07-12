@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.example.alexander.recyclerview.R;
 import com.example.alexander.recyclerview.model.News;
+import com.example.alexander.recyclerview.utils.Parser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,9 +21,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * A custom loader that loads all news from saved JSONFile.
+ * A custom loader that loads all news from saved JSON File.
  */
-public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
+public class NewsLoader extends AsyncTaskLoader<ArrayList<News>> {
 
     private ArrayList<News> mData;
     private SharedPreferences mSharedPrefs;
@@ -30,6 +31,10 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
     private static final long DELTA_ONE_HOUR = 1000 * 60 * 60;
     private static final long DELTA_THREE_HOURS = 1000 * 60 * 60 * 3;
     private static final long DELTA_ONE_DAY = 1000 * 60 * 60 * 24;
+    public static final String LAST_HOUR = "Last hour";
+    public static final String LAST_3_HOURS = "Last 3 hours";
+    public static final String THIS_DAY = "This day";
+    public static final String ALL = "All";
 
     public NewsLoader(Context context) {
         super(context);
@@ -40,10 +45,10 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
         mSharedPrefs = getContext().getSharedPreferences("Filter", Context.MODE_PRIVATE);
         mRes = getContext().getResources();
         // If we already have data, deliver it, else load data from file
-        if(mData != null) {
+        if (mData != null) {
             deliverResult(mData);
         } else {
-            if (getContext().getFileStreamPath("news.json").exists()) {
+            if (getContext().getFileStreamPath(Parser.FILE).exists()) {
                 forceLoad();
             }
         }
@@ -55,13 +60,13 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
         long delta = 0;
         // Checks SharedPrefs for delta time value. If we need all news, keep delta = 0
         switch (mSharedPrefs.getString("Filter", mRes.getString(R.string.last_3_hours))) {
-            case "Last hour":
+            case LAST_HOUR:
                 delta = DELTA_ONE_HOUR;
                 break;
-            case "Last 3 hours":
+            case LAST_3_HOURS:
                 delta = DELTA_THREE_HOURS;
                 break;
-            case "This day":
+            case THIS_DAY:
                 delta = DELTA_ONE_DAY;
                 break;
         }
@@ -69,7 +74,7 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
         ArrayList<News> data = new ArrayList<News>();
         String json = null;
         try {
-            InputStream inputStream = getContext().openFileInput("news.json");
+            InputStream inputStream = getContext().openFileInput(Parser.FILE);
             int size = inputStream.available();
             byte[] buffer = new byte[size];
             inputStream.read(buffer);
@@ -82,13 +87,14 @@ public class NewsLoader extends AsyncTaskLoader <ArrayList<News>> {
         try {
             JSONObject obj = new JSONObject(json);
             JSONArray news = obj.getJSONArray("news");
-            for(int i = 0; i < news.length(); i++) {
+            for (int i = 0; i < news.length(); i++) {
                 JSONObject card = news.getJSONObject(i);
-                data.add(new News(card.getString("title"),
-                        card.getString("description"),
-                        card.getString("link"),
-                        card.getString("pubDate"),
-                        card.getString("img")));
+                data.add(new News(card.getString(Parser.TITLE),
+                        card.getString(Parser.DESCRIPTION),
+                        card.getString(Parser.LINK),
+                        card.getString(Parser.PUB_DATE),
+                        card.getString(Parser.IMG)));
+                // If delta != 0 and news publication time not included in adjusted interval, break cycle
                 if (delta != 0 && data.get(i).getPubDate().getTime() < (time - delta)) break;
             }
         } catch (JSONException e) {

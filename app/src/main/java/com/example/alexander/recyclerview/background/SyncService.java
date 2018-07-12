@@ -38,8 +38,10 @@ import org.json.JSONObject;
  */
 public class SyncService extends JobService {
 
-    private static final String CHANNEL_ID = "News channel";
     public static final String LIST_READY = "com.example.alexander.recyclerview.LISTREADY";
+    private static final String CHANNEL_ID = "News channel";
+    private static final int MIN_LATENCY = 1000 * 60 * 3;
+    private static final int MAX_LATENCY = 1000 * 60 * 5;
     private ArrayList<News> mItemsList;
 
     public SyncService() {
@@ -47,9 +49,7 @@ public class SyncService extends JobService {
 
     @Override
     public boolean onStartJob(JobParameters params) {
-        if (checkConnection()) {
-            checkUpdates();
-        }
+        forceUpdate();
         jobFinished(params, false);
         // Reschedule job
         scheduleJob();
@@ -74,7 +74,7 @@ public class SyncService extends JobService {
         Log.d("LOG", "OnStartCommand");
         // When activity start server, create JSON file if it doesn't exist
         // or check updates
-        if (!getFileStreamPath("news.json").exists()) {
+        if (!getFileStreamPath(Parser.FILE).exists()) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -95,18 +95,17 @@ public class SyncService extends JobService {
     }
 
     /**
-     * Write news items from ArrayList to JSONFile
+     * Write news items from ArrayList to JSONFile.
      * @param data ArrayList with news items
      */
     private void writeToFile(ArrayList<News> data) {
         try {
             if (checkConnection()) {
-                OutputStream outputStream = openFileOutput("news.json", Context.MODE_PRIVATE);
+                OutputStream outputStream = openFileOutput(Parser.FILE, Context.MODE_PRIVATE);
                 Parser.writeJsonStream(outputStream, data);
                 outputStream.close();
                 sendBroadcastReady();
             }
-                // Log.d("LOG", this.getFilesDir().getPath());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -121,18 +120,24 @@ public class SyncService extends JobService {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if (!getFileStreamPath("news.json").exists()) {
+                if (!getFileStreamPath(Parser.FILE).exists()) {
                     Parser.parseRssToList(mItemsList);
                     writeToFile(mItemsList);
                 }
                 if (mItemsList.isEmpty()) {
                     readFromFile();
                 }
-                News lastItem = mItemsList.get(0);
+                int lastItemIndex = 0;
+                News lastItem = mItemsList.get(lastItemIndex);
                 Integer size = mItemsList.size();
                 // Log.d("LOG", lastItem.getTitle());
                 ArrayList<News> tempList = new ArrayList<News>();
                 Parser.parseRssToList(tempList);
+                // Duplicate items fix. Check lastItem is contained in RSS feed, if it was deleted,
+                // take next item from mItemsList as lastItem
+                while (!tempList.contains(lastItem)) {
+                    lastItem = mItemsList.get(++lastItemIndex);
+                }
                 // Log.d("LOG", tempList.get(0).getTitle());
                 for (int i = 0; i < tempList.size(); i++) {
                     if (!tempList.get(i).getLink().equals(lastItem.getLink())) {
@@ -148,7 +153,7 @@ public class SyncService extends JobService {
                         }
                     });
                     writeToFile(mItemsList);
-                    sendNotif();
+                    sendNotification();
                     Log.d("LOG", "UPDATED");
                 }
                 Log.d("LOG", "CHECKED");
@@ -171,7 +176,7 @@ public class SyncService extends JobService {
     private void readFromFile() {
         String json = null;
         try {
-            InputStream inputStream = openFileInput("news.json");
+            InputStream inputStream = openFileInput(Parser.FILE);
             int size = inputStream.available();
             byte[] buffer = new byte[size];
             inputStream.read(buffer);
@@ -185,11 +190,11 @@ public class SyncService extends JobService {
             JSONArray news = obj.getJSONArray("news");
             for (int i = 0; i < news.length(); i++) {
                 JSONObject card = news.getJSONObject(i);
-                mItemsList.add(new News(card.getString("title"),
-                        card.getString("description"),
-                        card.getString("link"),
-                        card.getString("pubDate"),
-                        card.getString("img")));
+                mItemsList.add(new News(card.getString(Parser.TITLE),
+                        card.getString(Parser.DESCRIPTION),
+                        card.getString(Parser.LINK),
+                        card.getString(Parser.PUB_DATE),
+                        card.getString(Parser.IMG)));
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -231,8 +236,8 @@ public class SyncService extends JobService {
         jobScheduler.schedule(new JobInfo.Builder(1,
                 new ComponentName(this, SyncService.class))
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setMinimumLatency(180 * 1000)
-                .setOverrideDeadline(300 * 1000)
+                .setMinimumLatency(MIN_LATENCY)
+                .setOverrideDeadline(MAX_LATENCY)
                 .build());
     }
 
@@ -252,14 +257,15 @@ public class SyncService extends JobService {
     }
 
     /**
-     * Send notification what news list has been updated.
+     * Send notification that news list has been updated.
      */
-    private void sendNotif() {
+    private void sendNotification() {
         Intent resultIntent = new Intent(this, NewsFeedActivity.class);
+        // Clear back stack
         resultIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0,
                 resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setContentTitle("News updated")
                 .setContentText("Your news list has been updated")
@@ -268,6 +274,6 @@ public class SyncService extends JobService {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true);
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        notificationManager.notify(1, mBuilder.build());
+        notificationManager.notify(1, builder.build());
     }
 }

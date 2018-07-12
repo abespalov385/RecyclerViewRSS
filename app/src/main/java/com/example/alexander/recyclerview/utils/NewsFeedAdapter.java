@@ -63,7 +63,7 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.ViewHo
     public void onBindViewHolder(@NonNull final NewsFeedAdapter.ViewHolder holder, int position) {
         holder.mTitle.setText(mDataSet.get(position).getTitle());
         holder.mDescription.setText(mDataSet.get(position).getDescription());
-        if(mDataSet.get(position).getImg() != null) {
+        if (mDataSet.get(position).getImg() != null) {
             Picasso.get().load(mDataSet.get(position).getImg()).into(holder.mImage);
         } else {
             holder.mImage.setImageBitmap(null);

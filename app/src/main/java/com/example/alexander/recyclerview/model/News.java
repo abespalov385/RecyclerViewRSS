@@ -1,16 +1,19 @@
 package com.example.alexander.recyclerview.model;
 
+import com.example.alexander.recyclerview.utils.Parser;
+
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Class represent single news item.
  */
-public class News implements Serializable{
+public class News implements Serializable {
 
     private String mTitle;
     private String mDescription;
@@ -26,11 +29,11 @@ public class News implements Serializable{
      * @param mDate news publication date and time
      * @param mImg link to the news image
      */
-    public News(String mTitle, String mDescription, String mLink, String mDate , String mImg) {
+    public News(String mTitle, String mDescription, String mLink, String mDate, String mImg) {
         this.mTitle = mTitle;
         this.mDescription = mDescription;
         this.mLink = mLink;
-        DateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
+        DateFormat formatter = new SimpleDateFormat(Parser.DATE_PATTERN, Locale.US);
         try {
             this.mPubDate = formatter.parse(mDate);
         } catch (ParseException e) {
@@ -112,10 +115,22 @@ public class News implements Serializable{
     }
 
     /**
-     * Set link to the full article
+     * Set link to the full article.
      * @param mURL link to the full article
      */
     public void setLink(String mURL) {
         this.mLink = mURL;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        News news = (News) o;
+        return Objects.equals(mTitle, news.mTitle) &&
+                Objects.equals(mDescription, news.mDescription) &&
+                Objects.equals(mImg, news.mImg) &&
+                Objects.equals(mLink, news.mLink) &&
+                Objects.equals(mPubDate, news.mPubDate);
     }
 }

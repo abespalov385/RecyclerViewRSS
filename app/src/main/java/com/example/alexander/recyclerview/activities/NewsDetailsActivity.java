@@ -1,8 +1,8 @@
 package com.example.alexander.recyclerview.activities;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -22,10 +22,11 @@ public class NewsDetailsActivity extends AppCompatActivity {
         TextView title = (TextView) findViewById(R.id.titleDetail);
         TextView description = (TextView) findViewById(R.id.descriptionDetail);
         ImageView img = (ImageView) findViewById(R.id.imageViewDetail);
-        img.setTransitionName(intent.getStringExtra("Img"));
-        title.setText(intent.getStringExtra("Title"));
-        description.setText(intent.getStringExtra("Description"));
-        Picasso.get().load(intent.getStringExtra("Img")).into(img);
+        // Getting transition name from intent and set it to imageView
+        img.setTransitionName(intent.getStringExtra(NewsFeedActivity.NEWS_IMG));
+        title.setText(intent.getStringExtra(NewsFeedActivity.NEWS_TITLE));
+        description.setText(intent.getStringExtra(NewsFeedActivity.NEWS_DESCRIPTION));
+        Picasso.get().load(intent.getStringExtra(NewsFeedActivity.NEWS_IMG)).into(img);
         supportStartPostponedEnterTransition();
     }
 }

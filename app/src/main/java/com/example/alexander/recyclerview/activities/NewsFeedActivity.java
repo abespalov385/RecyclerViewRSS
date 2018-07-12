@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
@@ -15,7 +16,6 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Menu;
@@ -24,14 +24,14 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.example.alexander.recyclerview.model.News;
-import com.example.alexander.recyclerview.utils.NewsFeedAdapter;
-import com.example.alexander.recyclerview.background.NewsLoader;
-import com.example.alexander.recyclerview.background.SyncService;
 import com.example.alexander.recyclerview.R;
 
-import java.util.ArrayList;
+import com.example.alexander.recyclerview.background.NewsLoader;
+import com.example.alexander.recyclerview.background.SyncService;
+import com.example.alexander.recyclerview.model.News;
+import com.example.alexander.recyclerview.utils.NewsFeedAdapter;
 
+import java.util.ArrayList;
 
 /**
  * Main application activity.
@@ -39,6 +39,10 @@ import java.util.ArrayList;
  * and allow to open single news item in another activity.
  */
 public class NewsFeedActivity extends AppCompatActivity {
+
+    public static final String NEWS_TITLE = "Title";
+    public static final String NEWS_DESCRIPTION = "Description";
+    public static final String NEWS_IMG = "Img";
 
     private SwipeRefreshLayout mSwipeRefresh;
     private NewsFeedAdapter mAdapter;
@@ -54,8 +58,10 @@ public class NewsFeedActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mLoader = getSupportLoaderManager().initLoader(0, null, mLoaderCallbacks);
         startService(new Intent(this, SyncService.class));
+        // Get SharedPrefs to load current filter
         mSharedPrefs = getSharedPreferences("Filter", Context.MODE_PRIVATE);
-        Toast.makeText(this, mSharedPrefs.getString("Filter", getResources().getString(R.string.last_3_hours)),
+        // Show current filter
+        Toast.makeText(this, mSharedPrefs.getString("Filter", NewsLoader.LAST_3_HOURS),
                 Toast.LENGTH_SHORT).show();
         mItemsList = new ArrayList<News>();
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -78,9 +84,9 @@ public class NewsFeedActivity extends AppCompatActivity {
             public void onClick(View view, int position, ImageView img) {
                 Intent intent = new Intent(NewsFeedActivity.this, NewsDetailsActivity.class);
                 // Putting extras to intent to restore it in new activity
-                intent.putExtra("Title", mItemsList.get(position).getTitle());
-                intent.putExtra("Description", mItemsList.get(position).getDescription());
-                intent.putExtra("Img", mItemsList.get(position).getImg());
+                intent.putExtra(NEWS_TITLE, mItemsList.get(position).getTitle());
+                intent.putExtra(NEWS_DESCRIPTION, mItemsList.get(position).getDescription());
+                intent.putExtra(NEWS_IMG, mItemsList.get(position).getImg());
                 Log.d("LOG", img.getTransitionName());
                 // Set image as shared element in transition animation
                 Pair imgPair = Pair.create(img, ViewCompat.getTransitionName(img));
@@ -94,7 +100,7 @@ public class NewsFeedActivity extends AppCompatActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.d("LOG", intent.getAction());
-                // Trigger updating loader then receive broadcast from service
+                // Trigger updating loader when receive broadcast from service
                 mLoader.onContentChanged();
             }
         };
@@ -143,34 +149,34 @@ public class NewsFeedActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = mSharedPrefs.edit();
         switch (item.getItemId()) {
             case R.id.last_hour:
-                Log.d("LOG", "Last hour");
-                editor.putString("Filter", getResources().getString(R.string.last_hour));
-                // Save filter to SharedPrefs to restore it then open app again
+                Log.d("LOG", NewsLoader.LAST_HOUR);
+                editor.putString("Filter", NewsLoader.LAST_HOUR);
+                // Save filter to SharedPrefs to restore it when open app again
                 editor.apply();
                 // Reload data depends on selected filter
                 mLoader.onContentChanged();
-                Toast.makeText(this, "Last hour", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, NewsLoader.LAST_HOUR, Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.last_3_hours:
-                Log.d("LOG", "Last 3 hours");
-                editor.putString("Filter", getResources().getString(R.string.last_3_hours));
+                Log.d("LOG", NewsLoader.LAST_3_HOURS);
+                editor.putString("Filter", NewsLoader.LAST_3_HOURS);
                 editor.apply();
                 mLoader.onContentChanged();
-                Toast.makeText(this, "Last 3 hours", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, NewsLoader.LAST_3_HOURS, Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.this_day:
-                Log.d("LOG", "This day");
-                editor.putString("Filter", getResources().getString(R.string.this_day));
+                Log.d("LOG", NewsLoader.THIS_DAY);
+                editor.putString("Filter", NewsLoader.THIS_DAY);
                 editor.apply();
                 mLoader.onContentChanged();
-                Toast.makeText(this, "This day", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, NewsLoader.THIS_DAY, Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.all:
-                Log.d("LOG", "All");
-                editor.putString("Filter", getResources().getString(R.string.all));
+                Log.d("LOG", NewsLoader.ALL);
+                editor.putString("Filter", NewsLoader.ALL);
                 editor.apply();
                 mLoader.onContentChanged();
-                Toast.makeText(this, "All", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, NewsLoader.ALL, Toast.LENGTH_SHORT).show();
                 return true;
         }
         return super.onOptionsItemSelected(item);
