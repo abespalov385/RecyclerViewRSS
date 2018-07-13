@@ -40,9 +40,9 @@ public class SyncService extends JobService {
 
     public static final String LIST_READY = "com.example.alexander.recyclerview.LISTREADY";
     private static final String CHANNEL_ID = "News channel";
-    private static final int MIN_LATENCY = 1000 * 60 * 3;
-    private static final int MAX_LATENCY = 1000 * 60 * 5;
-    private ArrayList<News> mItemsList;
+    private static final int MIN_LATENCY = 1000 * 60 * 1;
+    private static final int MAX_LATENCY = 1000 * 60 * 2;
+    private volatile ArrayList<News> mItemsList;
 
     public SyncService() {
     }
@@ -130,20 +130,24 @@ public class SyncService extends JobService {
                 int lastItemIndex = 0;
                 News lastItem = mItemsList.get(lastItemIndex);
                 Integer size = mItemsList.size();
-                // Log.d("LOG", lastItem.getTitle());
                 ArrayList<News> tempList = new ArrayList<News>();
                 Parser.parseRssToList(tempList);
-                // Duplicate items fix. Check lastItem is contained in RSS feed, if it was deleted,
+                // Duplicate items fix (if item was deleted from RSS feed).
+                // Check lastItem is contained in RSS feed, if it was deleted,
                 // take next item from mItemsList as lastItem
                 while (!tempList.contains(lastItem)) {
                     lastItem = mItemsList.get(++lastItemIndex);
                 }
-                // Log.d("LOG", tempList.get(0).getTitle());
                 for (int i = 0; i < tempList.size(); i++) {
-                    if (!tempList.get(i).getLink().equals(lastItem.getLink())) {
+                    /*if (!tempList.get(i).getLink().equals(lastItem.getLink())) {
                         mItemsList.add(tempList.get(i));
                         // Log.d("LOG", Integer.toString(itemsList.size()));
-                    } else break;
+                    } else break;*/
+                    if (tempList.get(i).checkDuplicates(lastItem)) {
+                        break;
+                    }
+                    Log.d("LOG", Boolean.toString(tempList.get(i).checkDuplicates(lastItem)));
+                    mItemsList.add(tempList.get(i));
                 }
                 if (size != mItemsList.size()) {
                     Collections.sort(mItemsList, new Comparator<News>() {

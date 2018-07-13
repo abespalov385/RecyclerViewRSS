@@ -22,6 +22,7 @@ import org.json.JSONObject;
 
 /**
  * A custom loader that loads all news from saved JSON File.
+ * Data loads in separate thread from file according to filter.
  */
 public class NewsLoader extends AsyncTaskLoader<ArrayList<News>> {
 

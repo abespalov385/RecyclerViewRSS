@@ -133,4 +133,21 @@ public class News implements Serializable {
                 Objects.equals(mLink, news.mLink) &&
                 Objects.equals(mPubDate, news.mPubDate);
     }
+
+    /**
+     * Compare fields of two news items.
+     * @param news news item for compare
+     * @return true if there are similar fields, false if all fields unique
+     */
+    public boolean checkDuplicates (News news) {
+        if (this.getTitle().equals(news.getTitle()) ||
+                this.getDescription().equals(news.getDescription()) ||
+                this.getLink().equals(news.getLink()) ||
+                this.getPubDate().equals(news.getPubDate()) ||
+                this.getImg().equals(news.getImg())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
