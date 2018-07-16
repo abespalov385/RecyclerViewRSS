@@ -34,15 +34,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Service for loading RSS feed list, checking updates of it and send notifications.
+ * Service for loading RSS feed list, checking updates and send notifications.
  */
 public class SyncService extends JobService {
 
     public static final String LIST_READY = "com.example.alexander.recyclerview.LISTREADY";
     private static final String CHANNEL_ID = "News channel";
-    private static final int MIN_LATENCY = 1000 * 60 * 1;
-    private static final int MAX_LATENCY = 1000 * 60 * 2;
-    private volatile ArrayList<News> mItemsList;
+    private static final int MIN_LATENCY = 1000 * 60 * 3;
+    private static final int MAX_LATENCY = 1000 * 60 * 5;
+    private ArrayList<News> mItemsList;
 
     public SyncService() {
     }
@@ -139,17 +139,13 @@ public class SyncService extends JobService {
                     lastItem = mItemsList.get(++lastItemIndex);
                 }
                 for (int i = 0; i < tempList.size(); i++) {
-                    /*if (!tempList.get(i).getLink().equals(lastItem.getLink())) {
-                        mItemsList.add(tempList.get(i));
-                        // Log.d("LOG", Integer.toString(itemsList.size()));
-                    } else break;*/
-                    if (tempList.get(i).checkDuplicates(lastItem)) {
+                    if (tempList.get(i).equals(lastItem)) {
                         break;
                     }
-                    Log.d("LOG", Boolean.toString(tempList.get(i).checkDuplicates(lastItem)));
                     mItemsList.add(tempList.get(i));
                 }
                 if (size != mItemsList.size()) {
+                    // Sort items by publication date
                     Collections.sort(mItemsList, new Comparator<News>() {
                         @Override
                         public int compare(News lhs, News rhs) {
@@ -222,11 +218,7 @@ public class SyncService extends JobService {
     private Boolean checkConnection() {
         ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-            return true;
-        } else {
-            return false;
-        }
+        return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
     /**

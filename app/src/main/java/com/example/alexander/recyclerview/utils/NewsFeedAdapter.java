@@ -87,7 +87,7 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.ViewHo
     }
 
     /**
-     * Provide a reference to the views for each data item.
+     * Provide a reference to the views.
      */
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView mTitle;

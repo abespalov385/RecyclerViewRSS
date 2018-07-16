@@ -87,6 +87,7 @@ public class NewsLoader extends AsyncTaskLoader<ArrayList<News>> {
         }
         try {
             JSONObject obj = new JSONObject(json);
+            //Read JSON array "news" and create ArrayList of news objects based on it
             JSONArray news = obj.getJSONArray("news");
             for (int i = 0; i < news.length(); i++) {
                 JSONObject card = news.getJSONObject(i);
